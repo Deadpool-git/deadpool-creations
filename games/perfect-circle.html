@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Perfect Circle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;
+    background:#f5f7fb;color:#1e2530;
+    font-family:'Outfit',system-ui,sans-serif;
+    user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+
+  #game{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:#f5f7fb;
+    overflow:hidden;padding:8px;gap:8px;
+  }
+
+  /* soft background wash — cool blue tones */
+  #bg{
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(140,180,240,.16) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(110,160,230,.14) 0%, transparent 45%),
+      radial-gradient(circle at 50% 50%, transparent 0%, rgba(210,225,245,.5) 100%);
+  }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:relative;z-index:5;
+    width:min(94vw,86vh,560px);
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:2px 4px 0 4px;
+    flex-shrink:0;
+  }
+  .hud-block{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .hud-block.right{text-align:right;align-items:flex-end}
+  .hud-label{
+    font-size:clamp(8px,1.1vw,10px);
+    letter-spacing:.24em;
+    color:#8a95a8;
+    text-transform:uppercase;font-weight:500;
+    white-space:nowrap;
+  }
+  .hud-val{
+    font-size:clamp(18px,2.8vw,26px);
+    font-weight:400;
+    color:#1e2530;line-height:1;
+    letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  .hud-val.best{color:#5b8ad6;font-size:clamp(14px,2vw,20px);font-weight:500}
+
+  /* ---------- CANVAS ---------- */
+  #canvasWrap{
+    position:relative;z-index:5;
+    padding:5px;border-radius:20px;
+    background:#fbfcfe;
+    box-shadow:
+      0 24px 48px -16px rgba(90,120,160,.15),
+      0 4px 12px rgba(90,120,160,.05),
+      inset 0 0 0 1px rgba(255,255,255,.9);
+    flex-shrink:0;
+  }
+  canvas{
+    display:block;border-radius:14px;
+    background:#f4f7fc;
+    width:min(88vw, 74vh, 520px);
+    height:min(88vw, 74vh, 520px);
+    touch-action:none;
+    cursor:crosshair;
+    user-select:none;
+  }
+
+  /* ---------- LIVE PERCENTAGE (center of canvas) ---------- */
+  #liveScore{
+    position:absolute;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    z-index:6;
+    pointer-events:none;
+    text-align:center;
+    transition:opacity .25s;
+    opacity:0;
+  }
+  #liveScore.show{opacity:1}
+  #liveVal{
+    font-size:clamp(32px,5.5vw,52px);
+    font-weight:300;
+    color:#1e2530;
+    line-height:1;
+    letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;
+    text-shadow:0 4px 20px rgba(140,180,240,.4);
+  }
+  #liveVal .pct{
+    font-size:.55em;
+    vertical-align:top;
+    color:#5b8ad6;
+    font-weight:400;
+  }
+  #liveHint{
+    font-size:clamp(8px,1.1vw,10px);
+    color:#8a95a8;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    font-weight:500;
+    margin-top:4px;
+  }
+
+  /* ---------- OVERLAYS ---------- */
+  #intro, #result{
+    position:absolute;inset:5px;z-index:10;
+    display:none;align-items:center;justify-content:center;
+    border-radius:14px;
+    animation:fadeIn .3s;
+  }
+  #intro.show, #result.show{display:flex}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  #intro{background:#fbfcfe;}
+  #result{background:rgba(245,247,251,.94);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+
+  .panel{
+    text-align:center;
+    padding:clamp(22px,4vw,30px) clamp(22px,4vw,34px);
+    max-width:92%;
+    animation:rise .5s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes rise{
+    0%{transform:translateY(14px);opacity:0}
+    100%{transform:translateY(0);opacity:1}
+  }
+
+  .panel-title{
+    font-size:clamp(34px,5.5vw,48px);
+    font-weight:300;
+    letter-spacing:-.01em;
+    color:#1e2530;
+    line-height:1;
+    margin-bottom:4px;
+  }
+  .panel-title .accent{color:#5b8ad6;font-weight:500}
+  .panel-sub{
+    font-size:clamp(9px,1.2vw,11px);
+    color:#8a95a8;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    font-weight:500;
+    margin-bottom:22px;
+  }
+  .rules{
+    display:flex;flex-direction:column;gap:10px;
+    text-align:left;margin-bottom:24px;
+  }
+  .rule{
+    display:flex;align-items:flex-start;gap:12px;
+    font-size:clamp(11px,1.5vw,13px);
+    color:#1e2530;line-height:1.45;font-weight:400;
+  }
+  .rule strong{color:#5b8ad6;font-weight:600}
+  .rule-num{
+    flex-shrink:0;
+    width:24px;height:24px;border-radius:50%;
+    background:#e6eefa;color:#5b8ad6;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:600;font-size:12px;
+  }
+  .count{
+    font-size:clamp(42px,7vw,68px);
+    font-weight:200;color:#5b8ad6;
+    line-height:1;letter-spacing:-.03em;
+    animation:countPop .9s ease-out;
+  }
+  @keyframes countPop{
+    0%{transform:scale(1.4);opacity:0}
+    50%{transform:scale(.95);opacity:1}
+    100%{transform:scale(1);opacity:1}
+  }
+
+  /* ---------- RESULT ---------- */
+  .result-panel{
+    text-align:center;
+    padding:clamp(24px,4vw,32px) clamp(26px,4vw,38px);
+    max-width:92%;
+    animation:rise .5s cubic-bezier(.2,.9,.3,1.2);
+  }
+
+  .tier{
+    font-size:clamp(20px,3.2vw,28px);
+    font-weight:500;
+    letter-spacing:.02em;
+    line-height:1;
+    margin-bottom:8px;
+  }
+  .tier.t1{color:#8a95a8}
+  .tier.t2{color:#7a8aa0}
+  .tier.t3{color:#5b8ad6}
+  .tier.t4{color:#4a7acc}
+  .tier.t5{color:#3568c0;font-weight:600;animation:softPulse .6s ease-in-out infinite}
+  .tier.t6{color:#1e4a9e;font-weight:600;animation:softPulse .5s ease-in-out infinite}
+  @keyframes softPulse{
+    0%,100%{transform:scale(1);opacity:1}
+    50%{transform:scale(1.05);opacity:.9}
+  }
+
+  .result-score{
+    font-size:clamp(56px,10vw,92px);
+    font-weight:200;
+    color:#1e2530;
+    line-height:.9;
+    letter-spacing:-.04em;
+    font-variant-numeric:tabular-nums;
+    margin:6px 0;
+  }
+  .result-score .pct{
+    font-size:.42em;
+    vertical-align:top;
+    color:#5b8ad6;
+    font-weight:400;
+  }
+
+  .result-msg{
+    font-size:clamp(12px,1.6vw,15px);
+    color:#4a5260;
+    margin:14px 0 6px 0;
+    font-weight:400;
+    line-height:1.5;
+    max-width:320px;
+    margin-left:auto;margin-right:auto;
+  }
+  .result-best{
+    font-size:clamp(10px,1.4vw,12px);
+    color:#5b8ad6;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    font-weight:500;
+    margin-top:16px;
+  }
+  .result-btn{
+    margin-top:24px;
+    background:#5b8ad6;color:#fff;
+    border:none;
+    padding:14px 38px;
+    border-radius:48px;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(10px,1.4vw,12px);
+    font-weight:500;letter-spacing:.2em;
+    text-transform:uppercase;cursor:pointer;
+    transition:.25s;
+    box-shadow:0 10px 24px -8px rgba(91,138,214,.6);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .result-btn:hover{
+    background:#4a7acc;
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px -8px rgba(91,138,214,.7);
+  }
+  .result-btn:active{transform:translateY(0)}
+
+  /* ---------- MUTE ---------- */
+  #muteBtn{
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top));
+    right:calc(14px + env(safe-area-inset-right));
+    z-index:30;
+    width:38px;height:38px;border-radius:50%;
+    background:#fbfcfe;
+    border:1px solid #dde6f2;
+    color:#1e2530;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;transition:.2s;
+    box-shadow:0 4px 12px rgba(90,120,160,.08);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  #muteBtn:hover{background:#fff;transform:translateY(-1px)}
+  #muteBtn:active{transform:scale(.94)}
+
+  /* ---------- HINT ---------- */
+  #hint{
+    position:fixed;
+    bottom:calc(14px + env(safe-area-inset-bottom));
+    left:50%;transform:translateX(-50%);
+    font-size:clamp(10px,1.3vw,12px);
+    color:#8a95a8;letter-spacing:.15em;
+    text-transform:uppercase;font-weight:500;
+    z-index:8;pointer-events:none;
+    opacity:1;transition:opacity .5s;
+    text-align:center;white-space:nowrap;
+  }
+  #hint.hide{opacity:0}
+
+  @media (max-width:600px){
+    #game{padding:6px;gap:6px}
+    .panel{padding:18px 22px}
+    #hint{bottom:8px}
+  }
+
+  @media (orientation:landscape) and (max-height:520px){
+    canvas{
+      width:min(56vw, 80vh, 460px);
+      height:min(56vw, 80vh, 460px);
+    }
+    #hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="bg"></div>
+
+  <button id="muteBtn" title="Sound on/off">🔊</button>
+
+  <div id="hud">
+    <div class="hud-block">
+      <div class="hud-label">Attempts</div>
+      <div class="hud-val" id="attemptsVal">0</div>
+    </div>
+    <div class="hud-block right">
+      <div class="hud-label">Best</div>
+      <div class="hud-val best" id="bestVal">—</div>
+    </div>
+  </div>
+
+  <div id="canvasWrap">
+    <canvas id="c" width="640" height="640"></canvas>
+
+    <!-- Live percentage (visible while drawing) -->
+    <div id="liveScore">
+      <div id="liveVal">0.0<span class="pct">%</span></div>
+      <div id="liveHint">roundness</div>
+    </div>
+
+    <div id="intro">
+      <div class="panel">
+        <div class="panel-title">Perfect <span class="accent">Circle</span></div>
+        <div class="panel-sub">draw · score · repeat</div>
+        <div class="rules">
+          <div class="rule">
+            <div class="rule-num">1</div>
+            <div>Draw a circle in <strong>one stroke</strong></div>
+          </div>
+          <div class="rule">
+            <div class="rule-num">2</div>
+            <div>We measure how <strong>round</strong> it is</div>
+          </div>
+          <div class="rule">
+            <div class="rule-num">3</div>
+            <div>Get <strong>100%</strong> for perfection</div>
+          </div>
+        </div>
+        <div class="count" id="introCount">3</div>
+      </div>
+    </div>
+
+    <div id="result">
+      <div class="result-panel">
+        <div class="tier" id="tierBadge">DECENT</div>
+        <div class="result-score"><span id="scoreVal">0.0</span><span class="pct">%</span></div>
+        <div class="result-msg" id="resultMsg">Try again!</div>
+        <div class="result-best" id="resultBest"></div>
+        <button class="result-btn" id="retryBtn">Draw Again</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hint">Draw a circle — one stroke</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var SAVE_KEY = 'deadpool-perfect-circle-best';
+var MIN_POINTS = 12;
+var MIN_DRAW_RADIUS = 15;
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W = canvas.width, H = canvas.height;
+
+var attemptsVal = document.getElementById('attemptsVal');
+var bestVal = document.getElementById('bestVal');
+var intro = document.getElementById('intro');
+var introCount = document.getElementById('introCount');
+var resultEl = document.getElementById('result');
+var tierBadge = document.getElementById('tierBadge');
+var scoreVal = document.getElementById('scoreVal');
+var resultMsg = document.getElementById('resultMsg');
+var resultBest = document.getElementById('resultBest');
+var retryBtn = document.getElementById('retryBtn');
+var muteBtn = document.getElementById('muteBtn');
+var hint = document.getElementById('hint');
+
+var liveScore = document.getElementById('liveScore');
+var liveVal = document.getElementById('liveVal');
+
+var points = [];
+var drawing = false;
+var active = false;
+var attempts = 0;
+var best = null;
+var ghostCircle = null;
+
+try {
+  var v = localStorage.getItem(SAVE_KEY);
+  if (v !== null) {
+    var parsed = parseFloat(v);
+    if (!isNaN(parsed)){
+      best = parsed;
+      bestVal.textContent = best.toFixed(1) + '%';
+    }
+  }
+} catch(e){}
+
+var audioCtx = null;
+var soundOn = true;
+function initAudio(){
+  if (audioCtx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  } catch(e){ audioCtx = null; }
+}
+function playTone(freq, dur, type, vol, delay){
+  if (!soundOn) return;
+  initAudio();
+  if (!audioCtx) return;
+  try {
+    var t0 = audioCtx.currentTime + (delay || 0);
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    osc.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol || 0.06, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  } catch(e){}
+}
+function sndTick(){ playTone(660, 0.06, 'sine', 0.05); }
+function sndGo(){ playTone(990, 0.14, 'sine', 0.07); }
+function sndScore(score){
+  if (score >= 100){
+    playTone(660, 0.15, 'sine', 0.08);
+    playTone(880, 0.15, 'sine', 0.08, 0.12);
+    playTone(1100, 0.15, 'sine', 0.08, 0.24);
+    playTone(1320, 0.35, 'sine', 0.10, 0.36);
+  } else if (score >= 95){
+    playTone(880, 0.12, 'sine', 0.08);
+    playTone(1100, 0.12, 'sine', 0.08, 0.10);
+    playTone(1320, 0.25, 'sine', 0.09, 0.20);
+  } else if (score >= 85){
+    playTone(880, 0.15, 'sine', 0.07);
+    playTone(1100, 0.20, 'sine', 0.07, 0.10);
+  } else if (score >= 70){
+    playTone(700, 0.15, 'sine', 0.06);
+    playTone(880, 0.20, 'sine', 0.06, 0.10);
+  } else {
+    playTone(400, 0.20, 'triangle', 0.05);
+  }
+}
+muteBtn.addEventListener('click', function(){
+  soundOn = !soundOn;
+  muteBtn.textContent = soundOn ? '🔊' : '🔇';
+});
+
+var introShown = false;
+
+function showIntroOnce(){
+  if (introShown) return false;
+  introShown = true;
+  intro.classList.add('show');
+  var count = 3;
+  introCount.textContent = count;
+  sndTick();
+  var iv = setInterval(function(){
+    count--;
+    if (count > 0){
+      introCount.textContent = count;
+      introCount.style.animation = 'none';
+      void introCount.offsetWidth;
+      introCount.style.animation = '';
+      sndTick();
+    } else {
+      clearInterval(iv);
+      introCount.textContent = 'GO';
+      sndGo();
+      setTimeout(function(){
+        intro.classList.remove('show');
+        beginDrawing();
+      }, 500);
+    }
+  }, 1000);
+  return true;
+}
+
+function beginDrawing(){
+  points = [];
+  ghostCircle = null;
+  active = true;
+  drawing = false;
+  liveScore.classList.remove('show');
+  hint.classList.remove('hide');
+  hint.textContent = 'Draw a circle — one stroke';
+  draw();
+}
+
+function retry(){
+  resultEl.classList.remove('show');
+  beginDrawing();
+}
+
+function getPos(e){
+  var r = canvas.getBoundingClientRect();
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (clientX - r.left) * (W / r.width),
+    y: (clientY - r.top)  * (H / r.height)
+  };
+}
+
+function onStart(e){
+  if (!active) return;
+  e.preventDefault();
+  var p = getPos(e);
+  drawing = true;
+  points = [p];
+  ghostCircle = null;
+  hint.classList.add('hide');
+  draw();
+}
+
+function onMove(e){
+  if (!active || !drawing) return;
+  e.preventDefault();
+  var p = getPos(e);
+  var last = points[points.length - 1];
+  var dx = p.x - last.x, dy = p.y - last.y;
+  if (dx*dx + dy*dy < 4) return;
+  points.push(p);
+
+  if (points.length >= 8){
+    var live = computeScore();
+    if (live !== null){
+      liveVal.innerHTML = live.toFixed(1) + '<span class="pct">%</span>';
+      liveScore.classList.add('show');
+    }
+  }
+
+  draw();
+}
+
+function onEnd(e){
+  if (!active || !drawing) return;
+  e.preventDefault();
+  drawing = false;
+  finalizeScore();
+}
+
+canvas.addEventListener('pointerdown', onStart);
+canvas.addEventListener('pointermove', onMove);
+canvas.addEventListener('pointerup', onEnd);
+canvas.addEventListener('pointercancel', onEnd);
+canvas.addEventListener('pointerleave', onEnd);
+
+canvas.addEventListener('touchstart', function(e){ if (!('onpointerdown' in window)) onStart(e); }, {passive:false});
+canvas.addEventListener('touchmove',  function(e){ if (!('onpointerdown' in window)) onMove(e);  }, {passive:false});
+canvas.addEventListener('touchend',   function(e){ if (!('onpointerdown' in window)) onEnd(e);   }, {passive:false});
+
+function computeScore(){
+  if (points.length < MIN_POINTS) return null;
+
+  var cx = 0, cy = 0;
+  for (var i = 0; i < points.length; i++){
+    cx += points[i].x;
+    cy += points[i].y;
+  }
+  cx /= points.length;
+  cy /= points.length;
+
+  var radii = [];
+  var rSum = 0;
+  for (var j = 0; j < points.length; j++){
+    var dx = points[j].x - cx;
+    var dy = points[j].y - cy;
+    var r = Math.sqrt(dx*dx + dy*dy);
+    radii.push(r);
+    rSum += r;
+  }
+  var rAvg = rSum / radii.length;
+
+  if (rAvg < MIN_DRAW_RADIUS) return null;
+
+  var devSum = 0;
+  for (var k = 0; k < radii.length; k++){
+    devSum += Math.abs(radii[k] - rAvg);
+  }
+  var avgDev = devSum / radii.length;
+  var devPct = (avgDev / rAvg) * 100;
+
+  var first = points[0], last = points[points.length - 1];
+  var cdx = last.x - first.x;
+  var cdy = last.y - first.y;
+  var closeDist = Math.sqrt(cdx*cdx + cdy*cdy);
+  var closurePenalty = Math.min(20, (closeDist / rAvg) * 50);
+
+  var score = 100 - devPct * 1.6 - closurePenalty;
+  score = Math.max(0, Math.min(100, score));
+  return Math.round(score * 10) / 10;
+}
+
+function finalizeScore(){
+  var score = computeScore();
+
+  if (score === null){
+    active = true;
+    points = [];
+    liveScore.classList.remove('show');
+    hint.classList.remove('hide');
+    draw();
+    return;
+  }
+
+  var cx = 0, cy = 0;
+  for (var i = 0; i < points.length; i++){
+    cx += points[i].x; cy += points[i].y;
+  }
+  cx /= points.length; cy /= points.length;
+  var rSum = 0;
+  for (var j = 0; j < points.length; j++){
+    var dx = points[j].x - cx, dy = points[j].y - cy;
+    rSum += Math.sqrt(dx*dx + dy*dy);
+  }
+  ghostCircle = { cx: cx, cy: cy, r: rSum / points.length };
+
+  attempts++;
+  attemptsVal.textContent = attempts;
+
+  if (best === null || score > best){
+    best = score;
+    try { localStorage.setItem(SAVE_KEY, best.toString()); } catch(e){}
+    bestVal.textContent = best.toFixed(1) + '%';
+  }
+
+  active = false;
+  liveScore.classList.remove('show');
+  sndScore(score);
+
+  setTimeout(function(){
+    showResult(score);
+  }, 400);
+}
+
+function showResult(score){
+  var tier, msg, cls;
+
+  if (score >= 100){
+    tier = '👑 LEGENDARY';
+    msg = 'PERFECT. How did you do that?';
+    cls = 't6';
+  } else if (score >= 95){
+    tier = '💎 INSANE';
+    msg = 'That was basically perfect!';
+    cls = 't5';
+  } else if (score >= 85){
+    tier = '🔥 IMPRESSIVE';
+    msg = 'That\'s a proper circle!';
+    cls = 't4';
+  } else if (score >= 70){
+    tier = '😎 NICE';
+    msg = 'Clean circle. Round and round.';
+    cls = 't3';
+  } else if (score >= 50){
+    tier = '🙂 DECENT';
+    msg = 'Not bad — keep practicing.';
+    cls = 't2';
+  } else {
+    tier = '😬 ROUGH';
+    msg = 'That\'s… something. Try again?';
+    cls = 't1';
+  }
+
+  tierBadge.textContent = tier;
+  tierBadge.className = 'tier ' + cls;
+  resultMsg.textContent = msg;
+  scoreVal.textContent = score.toFixed(1);
+
+  if (best !== null){
+    resultBest.textContent = 'Best: ' + best.toFixed(1) + '%';
+  }
+  resultEl.classList.add('show');
+}
+
+function draw(){
+  var bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#f4f7fc');
+  bgGrad.addColorStop(1, '#eaf0fa');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  if (ghostCircle && !drawing){
+    ctx.strokeStyle = 'rgba(91,138,214,0.35)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath();
+    ctx.arc(ghostCircle.cx, ghostCircle.cy, ghostCircle.r, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(91,138,214,0.4)';
+    ctx.beginPath();
+    ctx.arc(ghostCircle.cx, ghostCircle.cy, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  if (points.length > 1){
+    ctx.shadowColor = '#5b8ad6';
+    ctx.shadowBlur = 14;
+    ctx.strokeStyle = '#5b8ad6';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (var i = 1; i < points.length; i++){
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#4a7acc';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (var j = 1; j < points.length; j++){
+      ctx.lineTo(points[j].x, points[j].y);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = '#a8c4ec';
+    ctx.beginPath();
+    ctx.arc(points[0].x, points[0].y, 5, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+retryBtn.addEventListener('click', retry);
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){
+    if (resultEl.classList.contains('show')) retry();
+  }
+});
+document.addEventListener('pointerdown', function(){ initAudio(); }, {once:true});
+
+draw();
+if (!showIntroOnce()){
+  beginDrawing();
+}
+
+})();
+</script>
+</body>
+</html>

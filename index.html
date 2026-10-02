@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Deadpool Creations — small projects · big fun</title>
+
+<!-- Favicon (red "D" on dark) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231a1418'/%3E%3Ctext x='50' y='76' font-family='Arial Black, Arial, sans-serif' font-size='78' font-weight='900' text-anchor='middle' fill='%23c8102e'%3ED%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231a1418'/%3E%3Ctext x='50' y='76' font-family='Arial Black, Arial, sans-serif' font-size='78' font-weight='900' text-anchor='middle' fill='%23c8102e'%3ED%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231a1418'/%3E%3Ctext x='50' y='76' font-family='Arial Black, Arial, sans-serif' font-size='78' font-weight='900' text-anchor='middle' fill='%23c8102e'%3ED%3C/text%3E%3C/svg%3E">
+
+<!-- Primary meta tags -->
+<meta name="description" content="A collection of small, fun, mostly useless projects — games, experiments, and time-pass stuff. Built with maximum effort.">
+<meta name="theme-color" content="#c8102e">
+<meta name="author" content="Deadpool Creations">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://deadpool-creations.com/">
+<meta property="og:title" content="Deadpool Creations">
+<meta property="og:description" content="small projects · big fun — a collection of games, experiments, and time-pass stuff.">
+<meta property="og:site_name" content="Deadpool Creations">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Deadpool Creations">
+<meta name="twitter:description" content="small projects · big fun — a collection of games, experiments, and time-pass stuff.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f5f7fb;
+    color: #1e1e2f;
+    padding: 2rem 1.5rem;
+    min-height: 100vh;
+    animation: pageFadeIn 0.5s ease-out;
+  }
+  @keyframes pageFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .wrapper { max-width: 1200px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .brand h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .brand h1 span { color: #c8102e; }
+
+  .brand p {
+    color: #5a5a7a;
+    font-size: 0.9rem;
+    margin-top: 0.15rem;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 48px;
+    padding: 0.4rem 1.2rem;
+    border: 1px solid #eaeef5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: 0.2s;
+  }
+
+  .search-box:focus-within {
+    border-color: #c8102e;
+    box-shadow: 0 6px 16px rgba(200, 16, 46, 0.12);
+  }
+
+  .search-box span { opacity: 0.5; margin-right: 0.4rem; }
+
+  .search-box input {
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+    width: 180px;
+    background: transparent;
+    color: #1e1e2f;
+  }
+
+  .add-btn {
+    background: #1e1e2f;
+    border: none;
+    color: white;
+    font-family: inherit;
+    font-weight: 500;
+    padding: 0.7rem 1.3rem;
+    border-radius: 48px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    transition: 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(30, 30, 47, 0.12);
+  }
+
+  .add-btn:hover {
+    background: #2b2b45;
+    transform: translateY(-1px);
+  }
+
+  .add-btn.active {
+    background: #c8102e;
+    box-shadow: 0 8px 18px rgba(200, 16, 46, 0.25);
+  }
+
+  /* ADMIN BAR */
+  .admin-bar {
+    display: none;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    background: #1e1e2f;
+    color: #fff;
+    padding: 0.8rem 1.2rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  body.admin-mode .admin-bar { display: flex; }
+
+  .admin-bar .badge {
+    background: #c8102e;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  .admin-bar .spacer { flex: 1; }
+
+  .admin-bar button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 48px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .admin-bar button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .admin-bar .primary {
+    background: #c8102e;
+    border-color: #c8102e;
+  }
+
+  .admin-bar .primary:hover {
+    background: #e0142f;
+    border-color: #e0142f;
+  }
+
+  /* STATS */
+  .stats {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: #5a5a7a;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+  }
+
+  .stats i {
+    font-style: normal;
+    background: #e4e4f0;
+    padding: 0.2rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #1e1e2f;
+  }
+
+  /* GRID */
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .project-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 1.5rem 1.3rem 1.3rem;
+    border: 1px solid #f0f2f8;
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.02);
+    cursor: pointer;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.28s ease,
+                border-color 0.28s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: fadeIn 0.35s ease-out;
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 22px 38px -12px rgba(30, 30, 47, 0.18);
+    border-color: #e0e2f0;
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    width: 52px;
+    height: 52px;
+    background: #f0f2fc;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.9rem;
+  }
+
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.01em;
+    color: #1e1e2f;
+    transition: color 0.2s;
+  }
+
+  .project-card:hover .card-title {
+    color: #c8102e;
+  }
+
+  .card-description {
+    font-size: 0.88rem;
+    color: #5a5a7a;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 1rem;
+  }
+
+  .card-tag {
+    align-self: flex-start;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #fce8eb;
+    color: #c8102e;
+    padding: 0.28rem 0.75rem;
+    border-radius: 30px;
+  }
+
+  /* Card actions (admin mode only, on custom cards) */
+  .card-actions {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+  }
+
+  .project-card:hover .card-actions,
+  body.admin-mode .card-actions { opacity: 1; }
+
+  .card-actions button {
+    background: #f0f2fc;
+    border: none;
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-actions button:hover {
+    background: #e0e2f0;
+    transform: scale(1.08);
+  }
+
+  .card-actions .delete:hover { background: #ffd6d6; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* EMPTY STATE */
+  .no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #ffffff;
+    border-radius: 32px;
+    color: #5a5a7a;
+    border: 1px dashed #ccd0e0;
+  }
+
+  .no-results span {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    opacity: 0.6;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 25, 0.75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 900px;
+    height: 90vh;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.35);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.3rem;
+    border-bottom: 1px solid #f0f2f8;
+    background: #fff;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e1e2f;
+  }
+
+  .modal-close {
+    background: #f0f2fc;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1e1e2f;
+  }
+
+  .modal-close:hover {
+    background: #ffd6d6;
+    transform: rotate(90deg);
+  }
+
+  .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: #0f0f1a;
+    position: relative;
+  }
+
+  .modal-body iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* ADD / EDIT GAME FORM MODAL */
+  .form-modal {
+    background: #fff;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.35);
+  }
+
+  .form-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .form-body .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-body label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3b3b5c;
+    letter-spacing: 0.02em;
+  }
+
+  .form-body input,
+  .form-body textarea {
+    font-family: inherit;
+    font-size: 0.92rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #eaeef5;
+    border-radius: 12px;
+    outline: none;
+    background: #fafbff;
+    transition: 0.2s;
+  }
+
+  .form-body input:focus,
+  .form-body textarea:focus {
+    border-color: #c8102e;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1);
+  }
+
+  .form-body textarea {
+    resize: vertical;
+    min-height: 220px;
+    font-family: 'SF Mono', Monaco, Menlo, monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-hint {
+    font-size: 0.78rem;
+    color: #8a8aa0;
+    margin-top: 0.2rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 0.7rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f0f2f8;
+    background: #fafbff;
+  }
+
+  .btn-primary {
+    background: #c8102e;
+    color: #fff;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.7rem 1.3rem;
+    border-radius: 48px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn-primary:hover {
+    background: #a50d26;
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    background: #fff;
+    color: #1e1e2f;
+    border: 1px solid #eaeef5;
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.7rem 1.3rem;
+    border-radius: 48px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn-ghost:hover { background: #f5f7fb; }
+
+  /* FOOTER */
+  .site-footer {
+    margin-top: 4rem;
+    padding: 1.5rem 0 0.5rem;
+    border-top: 1px solid #eaeef5;
+    text-align: center;
+    color: #8a9aa8;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+  }
+
+  .site-footer .skull {
+    font-size: 1rem;
+    vertical-align: -1px;
+    margin-right: 2px;
+  }
+
+  .site-footer .heart {
+    color: #c8102e;
+    margin: 0 2px;
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 1.5rem 1rem; }
+    .header { flex-direction: column; align-items: flex-start; }
+    .toolbar { width: 100%; }
+    .search-box { flex: 1; }
+    .search-box input { width: 100%; }
+    .project-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 420px) {
+    .project-grid { grid-template-columns: 1fr; }
+  }
+
+  ::selection { background: #f5c5cd; color: #7a0b1c; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <div class="brand">
+      <h1>💀 Deadpool <span>Creations</span></h1>
+      <p>small projects · big fun</p>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="Search projects..." autocomplete="off">
+      </div>
+      <button class="add-btn" id="adminToggleBtn">🔒 Admin</button>
+    </div>
+  </div>
+
+  <!-- ADMIN BAR -->
+  <div class="admin-bar" id="adminBar">
+    <span class="badge">ADMIN MODE</span>
+    <span>Add, edit, and delete custom projects.</span>
+    <span class="spacer"></span>
+    <button class="primary" id="addProjectBtn">+ Add Project</button>
+    <button id="exportBtn">⬇ Export</button>
+    <button id="importBtn">⬆ Import</button>
+    <button id="resetBtn">↺ Reset</button>
+    <button id="exitAdminBtn">Exit</button>
+  </div>
+
+  <div class="stats">
+    <span>📁 your collection</span>
+    <i id="projectCount">0 projects</i>
+    <span style="margin-left: auto; font-size: 0.8rem; opacity: 0.7;">click any card to play</span>
+  </div>
+
+  <div class="project-grid" id="projectGrid"></div>
+
+  <!-- FOOTER -->
+  <div class="site-footer">
+    <span class="skull">💀</span> Deadpool Creations
+    <span style="opacity: 0.5;"> · </span>
+    built with<span class="heart">❤</span>maximum effort
+  </div>
+</div>
+
+<!-- GAME MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">🎮 Game</h3>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <iframe id="gameFrame" src="about:blank"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT GAME FORM MODAL -->
+<div class="modal-overlay" id="formModal">
+  <div class="form-modal">
+    <div class="modal-header">
+      <h3 id="formTitle">➕ Add New Project</h3>
+      <button class="modal-close" id="formClose">✕</button>
+    </div>
+    <div class="form-body">
+      <div class="form-row">
+        <div class="field">
+          <label>Title</label>
+          <input type="text" id="fTitle" placeholder="e.g. Memory Match">
+        </div>
+        <div class="field">
+          <label>Tag</label>
+          <input type="text" id="fTag" placeholder="e.g. puzzle, arcade">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Icon (emoji)</label>
+          <input type="text" id="fIcon" placeholder="🎯" maxlength="4">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input type="text" id="fDesc" placeholder="Short one-liner about the game">
+        </div>
+      </div>
+      <div class="field">
+        <label>Paste game code (full HTML document)</label>
+        <textarea id="fCode" placeholder="<!DOCTYPE html>&#10;<html>&#10;<head><style>...</style></head>&#10;<body>...your game...<script>...</script></body>&#10;</html>"></textarea>
+        <div class="form-hint">The code runs inside the modal. Full HTML documents work best.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="formSave">💾 Save Project</button>
+      <button class="btn-ghost" id="formCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+var STORAGE_KEY = 'deadpool-creations-custom-games-v1';
+var ADMIN_KEY = 'deadpool-creations-admin';
+var ADMIN_PASSCODE = 'deadpool';
+
+/* ============================================================
+   BUILTIN PROJECTS (always present, not editable/deletable)
+   ============================================================ */
+var BUILTIN = [
+  { id:'time-debt',      icon:'⏱️', title:'Time Debt',      desc:'Tap moving icons. Every hit buys time. Miss and it costs you.', tag:'reflex', url:'games/time-debt.html',      builtin:true },
+  { id:'mirror',         icon:'🪞', title:'Mirror',         desc:'Control two characters at once — one moves inverted.',           tag:'puzzle', url:'games/mirror.html',         builtin:true },
+  { id:'comet-rush',     icon:'☄️', title:'Comet Rush',     desc:'Glide through space. Brake for barriers. Collect stars.',         tag:'skill',  url:'games/comet-rush.html',     builtin:true },
+  { id:'perfect-circle', icon:'⭕', title:'Perfect Circle', desc:'Draw a circle. Get scored on how round it is.',                   tag:'skill',  url:'games/perfect-circle.html', builtin:true }
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+var customGames = loadCustom();
+var adminMode = sessionStorage.getItem(ADMIN_KEY) === '1';
+var editingIndex = -1; // -1 = adding, >= 0 = editing custom game index
+
+function loadCustom(){
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(e) { return []; }
+}
+
+function saveCustom(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(customGames)); } catch(e) {}
+}
+
+function getAllGames(){
+  return BUILTIN.concat(customGames);
+}
+
+/* ============================================================
+   DOM
+   ============================================================ */
+var grid = document.getElementById('projectGrid');
+var searchInput = document.getElementById('searchInput');
+var projectCountSpan = document.getElementById('projectCount');
+var adminToggleBtn = document.getElementById('adminToggleBtn');
+var adminBar = document.getElementById('adminBar');
+var modal = document.getElementById('modal');
+var modalTitle = document.getElementById('modalTitle');
+var modalClose = document.getElementById('modalClose');
+var gameFrame = document.getElementById('gameFrame');
+var formModal = document.getElementById('formModal');
+var formTitle = document.getElementById('formTitle');
+var formClose = document.getElementById('formClose');
+var formCancel = document.getElementById('formCancel');
+var formSave = document.getElementById('formSave');
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function escapeHtml(t) {
+  if (!t) return '';
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+/* ============================================================
+   RENDER GRID
+   ============================================================ */
+function renderGrid(searchTerm) {
+  searchTerm = searchTerm || '';
+  var term = searchTerm.trim().toLowerCase();
+  var all = getAllGames();
+  var list = all;
+  if (term) {
+    list = all.filter(function(g) {
+      return g.title.toLowerCase().indexOf(term) > -1 ||
+             g.desc.toLowerCase().indexOf(term) > -1 ||
+             g.tag.toLowerCase().indexOf(term) > -1;
+    });
+  }
+
+  projectCountSpan.textContent = term
+    ? list.length + ' of ' + all.length + ' projects'
+    : all.length + ' project' + (all.length !== 1 ? 's' : '');
+
+  if (!list.length) {
+    grid.innerHTML = '<div class="no-results"><span>🔎</span>No projects match "<strong>' + escapeHtml(term) + '</strong>".</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(function(g) {
+    var dataUrl, customIdx = -1;
+    if (g.builtin) {
+      dataUrl = g.url;
+    } else {
+      customIdx = customGames.indexOf(g);
+      dataUrl = customIdx > -1 ? 'data:text/html;charset=utf-8,' + encodeURIComponent(customGames[customIdx].code) : '';
+    }
+
+    var actions = '';
+    if (!g.builtin && customIdx > -1) {
+      actions = '<div class="card-actions">' +
+        '<button class="edit" data-custom="' + customIdx + '" title="Edit">✏️</button>' +
+        '<button class="delete" data-custom="' + customIdx + '" title="Delete">🗑️</button>' +
+      '</div>';
+    }
+
+    return '<div class="project-card" data-url="' + dataUrl + '" data-title="' + escapeHtml(g.title) + '" data-icon="' + escapeHtml(g.icon) + '" data-builtin="' + (g.builtin ? '1' : '0') + '" data-custom="' + customIdx + '">' +
+      actions +
+      '<div class="card-icon">' + escapeHtml(g.icon) + '</div>' +
+      '<div class="card-title">' + escapeHtml(g.title) + '</div>' +
+      '<div class="card-description">' + escapeHtml(g.desc) + '</div>' +
+      '<span class="card-tag">' + escapeHtml(g.tag) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============================================================
+   OPEN / CLOSE GAME MODAL
+   ============================================================ */
+function openGame(url, title, icon) {
+  if (!url || url === 'data:text/html;charset=utf-8,') {
+    alert('No playable code for this project.');
+    return;
+  }
+  modalTitle.textContent = icon + ' ' + title;
+  gameFrame.src = url;
+  modal.classList.add('open');
+}
+
+function closeGame() {
+  modal.classList.remove('open');
+  gameFrame.src = 'about:blank';
+}
+
+/* ============================================================
+   ADMIN MODE
+   ============================================================ */
+function updateAdminUI() {
+  if (adminMode) {
+    document.body.classList.add('admin-mode');
+    adminToggleBtn.textContent = '🔓 Admin ON';
+    adminToggleBtn.classList.add('active');
+    adminBar.style.display = 'flex';
+  } else {
+    document.body.classList.remove('admin-mode');
+    adminToggleBtn.textContent = '🔒 Admin';
+    adminToggleBtn.classList.remove('active');
+    adminBar.style.display = 'none';
+  }
+}
+
+adminToggleBtn.addEventListener('click', function() {
+  if (adminMode) {
+    adminMode = false;
+    sessionStorage.removeItem(ADMIN_KEY);
+  } else {
+    var pass = prompt('Enter admin passcode:');
+    if (pass === ADMIN_PASSCODE) {
+      adminMode = true;
+      sessionStorage.setItem(ADMIN_KEY, '1');
+    } else if (pass !== null) {
+      alert('Wrong passcode.');
+    }
+  }
+  updateAdminUI();
+});
+
+document.getElementById('exitAdminBtn').addEventListener('click', function() {
+  adminMode = false;
+  sessionStorage.removeItem(ADMIN_KEY);
+  updateAdminUI();
+});
+
+/* ============================================================
+   ADD / EDIT FORM
+   ============================================================ */
+function openForm(isEdit, idx) {
+  editingIndex = isEdit ? idx : -1;
+  formTitle.textContent = isEdit ? '✏️ Edit Project' : '➕ Add New Project';
+
+  if (isEdit && customGames[idx]) {
+    var g = customGames[idx];
+    document.getElementById('fTitle').value = g.title;
+    document.getElementById('fTag').value = g.tag;
+    document.getElementById('fIcon').value = g.icon;
+    document.getElementById('fDesc').value = g.desc;
+    document.getElementById('fCode').value = g.code;
+  } else {
+    document.getElementById('fTitle').value = '';
+    document.getElementById('fTag').value = '';
+    document.getElementById('fIcon').value = '🎮';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fCode').value = '';
+  }
+  formModal.classList.add('open');
+}
+
+function closeForm() {
+  formModal.classList.remove('open');
+  editingIndex = -1;
+}
+
+function saveForm() {
+  var title = document.getElementById('fTitle').value.trim();
+  var tag   = document.getElementById('fTag').value.trim().toLowerCase() || 'custom';
+  var icon  = document.getElementById('fIcon').value.trim() || '🎮';
+  var desc  = document.getElementById('fDesc').value.trim() || 'A custom project.';
+  var code  = document.getElementById('fCode').value.trim();
+
+  if (!title) { alert('Please enter a title.'); return; }
+  if (!code)  { alert('Please paste the game code.'); return; }
+
+  if (editingIndex > -1) {
+    customGames[editingIndex] = {
+      id: customGames[editingIndex].id,
+      icon: icon, title: title, desc: desc, tag: tag, code: code, builtin: false
+    };
+  } else {
+    customGames.push({
+      id: 'custom-' + Date.now(),
+      icon: icon, title: title, desc: desc, tag: tag, code: code, builtin: false
+    });
+  }
+
+  saveCustom();
+  closeForm();
+  renderGrid(searchInput.value);
+}
+
+document.getElementById('addProjectBtn').addEventListener('click', function() {
+  openForm(false);
+});
+
+formSave.addEventListener('click', saveForm);
+formCancel.addEventListener('click', closeForm);
+formClose.addEventListener('click', closeForm);
+formModal.addEventListener('click', function(e) {
+  if (e.target === formModal) closeForm();
+});
+
+/* ============================================================
+   CARD CLICKS — play, edit, delete
+   ============================================================ */
+grid.addEventListener('click', function(e) {
+  var editBtn = e.target.closest('.edit');
+  var deleteBtn = e.target.closest('.delete');
+  var card = e.target.closest('.project-card');
+
+  if (editBtn) {
+    e.stopPropagation();
+    var idx = +editBtn.getAttribute('data-custom');
+    openForm(true, idx);
+    return;
+  }
+
+  if (deleteBtn) {
+    e.stopPropagation();
+    var idx2 = +deleteBtn.getAttribute('data-custom');
+    var g = customGames[idx2];
+    if (!g) return;
+    if (!confirm('Delete "' + g.title + '"?')) return;
+    customGames.splice(idx2, 1);
+    saveCustom();
+    renderGrid(searchInput.value);
+    return;
+  }
+
+  if (card) {
+    openGame(
+      card.getAttribute('data-url'),
+      card.getAttribute('data-title'),
+      card.getAttribute('data-icon')
+    );
+  }
+});
+
+/* ============================================================
+   MODAL CLOSE — game
+   ============================================================ */
+modalClose.addEventListener('click', closeGame);
+modal.addEventListener('click', function(e) {
+  if (e.target === modal) closeGame();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (modal.classList.contains('open')) closeGame();
+    if (formModal.classList.contains('open')) closeForm();
+  }
+});
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+searchInput.addEventListener('input', function(e) {
+  renderGrid(e.target.value);
+});
+
+/* ============================================================
+   EXPORT / IMPORT / RESET
+   ============================================================ */
+document.getElementById('exportBtn').addEventListener('click', function() {
+  var blob = new Blob([JSON.stringify(customGames, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'deadpool-creations-custom-games-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('importBtn').addEventListener('click', function() {
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json';
+  inp.onchange = function(e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function(ev) {
+      try {
+        var arr = JSON.parse(ev.target.result);
+        if (!Array.isArray(arr)) throw 0;
+        arr.forEach(function(g) {
+          if (g && g.title && g.code) {
+            customGames.push({
+              id: 'custom-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+              icon: g.icon || '🎮',
+              title: g.title,
+              desc: g.desc || 'A custom game.',
+              tag: g.tag || 'custom',
+              code: g.code,
+              builtin: false
+            });
+          }
+        });
+        saveCustom();
+        renderGrid('');
+        alert('Imported ' + arr.length + ' projects.');
+      } catch(e2) { alert('Invalid file.'); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+});
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+  if (!confirm('Delete all custom projects? Built-in games will stay.')) return;
+  customGames = [];
+  saveCustom();
+  renderGrid('');
+  alert('All custom projects removed.');
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+updateAdminUI();
+renderGrid('');
+
+})();
+</script>
+</body>
+</html>

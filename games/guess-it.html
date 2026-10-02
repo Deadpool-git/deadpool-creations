@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Guess It</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;
+    background:#faf7ff;color:#241a3a;
+    font-family:'Outfit',system-ui,sans-serif;
+    user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+
+  #game{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:#faf7ff;
+    overflow:hidden;padding:12px;gap:10px;
+  }
+
+  #bg{
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(139,92,246,.10) 0%, transparent 50%),
+      radial-gradient(circle at 85% 80%, rgba(139,92,246,.08) 0%, transparent 50%);
+  }
+
+  #topBar{
+    position:relative;z-index:5;
+    width:min(94vw, 560px);
+    display:flex;justify-content:space-between;align-items:center;
+    padding:0 4px;
+    flex-shrink:0;
+  }
+  #levelIndicator{
+    font-size:clamp(11px,1.5vw,13px);
+    font-weight:600;letter-spacing:.2em;
+    color:#6b5b8a;text-transform:uppercase;
+  }
+  #levelIndicator b{color:#8b5cf6;}
+  #progressBar{
+    width:min(94vw, 560px);
+    height:5px;background:#e9e0f7;
+    border-radius:20px;overflow:hidden;
+    margin-top:-4px;
+    flex-shrink:0;z-index:5;position:relative;
+  }
+  #progressFill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#a78bfa,#8b5cf6);
+    border-radius:20px;
+    transition:width .4s ease;
+  }
+
+  #canvasWrap{
+    position:relative;z-index:5;
+    padding:6px;border-radius:20px;
+    background:#fdf9ff;
+    box-shadow:
+      0 20px 40px -16px rgba(90,70,140,.15),
+      0 4px 12px rgba(90,70,140,.05),
+      inset 0 0 0 1px rgba(255,255,255,.9);
+    flex-shrink:1;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  canvas{
+    display:block;border-radius:14px;
+    background:#f5f0ff;
+    width:min(80vw, 380px);
+    height:min(80vw, 380px);
+    touch-action:none;
+    cursor:pointer;
+  }
+
+  #challengeTitle{
+    position:relative;z-index:5;
+    font-size:clamp(15px, 2.2vw, 19px);
+    font-weight:500;
+    color:#241a3a;
+    text-align:center;
+    letter-spacing:-.01em;
+    flex-shrink:0;
+  }
+  #challengeHint{
+    position:relative;z-index:5;
+    font-size:clamp(11px, 1.4vw, 13px);
+    color:#6b5b8a;
+    text-align:center;
+    margin-top:-6px;
+    flex-shrink:0;
+  }
+
+  #controls{
+    position:relative;z-index:5;
+    width:min(94vw, 560px);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:10px;
+    flex-shrink:0;
+    padding:6px 0;
+  }
+
+  .slider-wrap{
+    width:min(85vw, 480px);
+    display:flex;flex-direction:column;gap:6px;
+    align-items:center;
+  }
+  .slider-labels{
+    display:flex;justify-content:space-between;
+    width:100%;font-size:11px;color:#9c8bb5;font-weight:500;
+  }
+  .slider-value{
+    font-size:clamp(20px, 3.5vw, 30px);
+    font-weight:600;
+    color:#8b5cf6;
+    line-height:1;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type="range"]{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:6px;
+    background:#e9e0f7;
+    border-radius:20px;
+    outline:none;
+    cursor:pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    appearance:none;
+    width:26px;height:26px;
+    background:#8b5cf6;
+    border-radius:50%;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(139,92,246,.4);
+    transition:transform .15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:active{transform:scale(1.15);}
+  input[type="range"]::-moz-range-thumb{
+    width:26px;height:26px;
+    background:#8b5cf6;
+    border-radius:50%;
+    cursor:pointer;
+    border:none;
+    box-shadow:0 2px 8px rgba(139,92,246,.4);
+  }
+
+  .action-btn{
+    background:#8b5cf6;color:#fff;
+    border:none;
+    font-family:inherit;
+    font-size:clamp(13px, 1.7vw, 16px);
+    font-weight:600;
+    letter-spacing:.05em;
+    padding:14px 36px;
+    border-radius:48px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(139,92,246,.6);
+    transition:.2s;
+    text-transform:uppercase;
+    min-width:180px;
+  }
+  .action-btn:hover{
+    background:#7c3aed;
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px -8px rgba(139,92,246,.7);
+  }
+  .action-btn:active{transform:translateY(0);}
+  .action-btn:disabled{
+    background:#c8beb8;cursor:not-allowed;
+    box-shadow:none;transform:none;
+  }
+
+  .action-btn-row{
+    display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+  }
+  .action-btn-row .action-btn{min-width:120px;}
+
+  .choice-btn{
+    background:#fff;
+    color:#241a3a;
+    border:2px solid #e9e0f7;
+    font-family:inherit;
+    font-size:clamp(14px, 2vw, 18px);
+    font-weight:500;
+    padding:18px 24px;
+    border-radius:16px;
+    cursor:pointer;
+    transition:.2s;
+    min-width:110px;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .choice-btn:hover{
+    border-color:#8b5cf6;
+    transform:translateY(-2px);
+    box-shadow:0 10px 20px -8px rgba(139,92,246,.3);
+  }
+  .choice-btn .emoji{font-size:36px;}
+  .choice-btn .label{font-size:12px;color:#9c8bb5;font-weight:500;}
+
+  .color-picker-wrap{
+    display:flex;
+    flex-direction:row;
+    gap:16px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  #wheelCanvas{
+    background:transparent;
+    width:180px;
+    height:180px;
+    cursor:crosshair;
+    border-radius:50%;
+    touch-action:none;
+  }
+  .color-preview{
+    width:120px;
+    height:120px;
+    border-radius:16px;
+    border:4px solid #241a3a;
+    box-shadow:0 8px 20px rgba(0,0,0,.1);
+  }
+
+  .color-result-row{
+    display:flex;
+    gap:20px;
+    align-items:center;
+    justify-content:center;
+    margin:14px 0;
+  }
+  .color-result-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .color-result-square{
+    width:80px;
+    height:80px;
+    border-radius:12px;
+    border:3px solid #241a3a;
+  }
+  .color-result-label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.15em;
+    color:#6b5b8a;
+    text-transform:uppercase;
+  }
+
+  #feedback{
+    position:absolute;inset:0;z-index:20;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(250,247,255,.94);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    animation:fadeIn .3s;
+  }
+  #feedback.show{display:flex;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+  .feedback-card{
+    text-align:center;
+    padding:28px 34px;
+    max-width:90%;
+    animation:pop .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes pop{
+    0%{transform:scale(.85);opacity:0;}
+    100%{transform:scale(1);opacity:1;}
+  }
+  .feedback-icon{
+    font-size:56px;
+    line-height:1;
+    margin-bottom:10px;
+  }
+  .feedback-title{
+    font-size:clamp(22px, 3.6vw, 28px);
+    font-weight:500;
+    color:#241a3a;
+    letter-spacing:-.01em;
+    margin-bottom:8px;
+  }
+  .feedback-title.pass{color:#5b8c4a;}
+  .feedback-title.fail{color:#b23a6b;}
+  .feedback-detail{
+    font-size:clamp(13px, 1.7vw, 15px);
+    color:#6b5b8a;
+    margin-bottom:22px;
+    line-height:1.5;
+  }
+  .feedback-detail b{color:#241a3a;font-weight:600;}
+  .feedback-btn{
+    background:#8b5cf6;color:#fff;
+    border:none;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.08em;
+    padding:13px 32px;
+    border-radius:48px;
+    cursor:pointer;
+    box-shadow:0 10px 24px -8px rgba(139,92,246,.6);
+    transition:.2s;
+    text-transform:uppercase;
+  }
+  .feedback-btn:hover{
+    background:#7c3aed;
+    transform:translateY(-2px);
+  }
+
+  #final{
+    position:absolute;inset:0;z-index:30;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(250,247,255,.97);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    animation:fadeIn .4s;
+  }
+  #final.show{display:flex;}
+  .final-card{
+    text-align:center;
+    padding:32px 40px;
+    max-width:92%;
+    animation:pop .6s cubic-bezier(.34,1.56,.64,1);
+  }
+  .final-emoji{font-size:64px;line-height:1;margin-bottom:6px;}
+  .final-title{
+    font-size:clamp(26px, 4.5vw, 36px);
+    font-weight:300;
+    color:#241a3a;
+    letter-spacing:-.02em;
+    margin-bottom:4px;
+  }
+  .final-title .accent{color:#8b5cf6;font-weight:500;}
+  .final-score{
+    font-size:clamp(52px, 9vw, 76px);
+    font-weight:200;
+    color:#8b5cf6;
+    line-height:1;
+    letter-spacing:-.04em;
+    margin:16px 0 4px 0;
+    font-variant-numeric:tabular-nums;
+  }
+  .final-score-label{
+    font-size:11px;
+    color:#6b5b8a;
+    letter-spacing:.3em;
+    text-transform:uppercase;
+    font-weight:500;
+    margin-bottom:22px;
+  }
+  .final-msg{
+    font-size:14px;
+    color:#6b5b8a;
+    margin-bottom:26px;
+    line-height:1.5;
+    max-width:320px;
+    margin-left:auto;margin-right:auto;
+  }
+
+  #muteBtn{
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top));
+    right:calc(14px + env(safe-area-inset-right));
+    z-index:30;
+    width:36px;height:36px;border-radius:50%;
+    background:#fdf9ff;
+    border:1px solid #e9e0f7;
+    color:#241a3a;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;transition:.2s;
+    box-shadow:0 4px 12px rgba(90,70,140,.08);
+  }
+  #muteBtn:hover{background:#fff;transform:translateY(-1px);}
+  #muteBtn:active{transform:scale(.94);}
+
+  #hint{
+    position:fixed;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    left:50%;transform:translateX(-50%);
+    font-size:10px;
+    color:#9c8bb5;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+    font-weight:500;
+    z-index:8;pointer-events:none;
+    text-align:center;white-space:nowrap;
+    opacity:.8;
+  }
+
+  #helpBtn{
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top));
+    right:calc(58px + env(safe-area-inset-right));
+    z-index:30;
+    width:36px;height:36px;border-radius:50%;
+    background:#fdf9ff;
+    border:1px solid #e9e0f7;
+    color:#241a3a;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;transition:.2s;
+    box-shadow:0 4px 12px rgba(90,70,140,.08);
+    font-weight:600;
+  }
+  #helpBtn:hover{background:#fff;transform:translateY(-1px);}
+
+  #helpPanel{
+    position:fixed;inset:0;z-index:40;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(20,15,35,.75);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    padding:20px;
+    animation:fadeIn .3s;
+  }
+  #helpPanel.show{display:flex;}
+  .help-card{
+    background:#fdf9ff;
+    border-radius:24px;
+    padding:24px 28px;
+    max-width:520px;width:100%;
+    max-height:85vh;overflow-y:auto;
+    box-shadow:0 40px 80px rgba(0,0,0,.4);
+  }
+  .help-card h2{
+    font-size:20px;font-weight:600;
+    margin-bottom:14px;color:#241a3a;
+  }
+  .help-card p{
+    font-size:13px;color:#5a5048;
+    line-height:1.6;margin-bottom:12px;
+  }
+  .help-card ul{
+    list-style:none;font-size:12px;color:#5a5048;
+    line-height:1.7;margin-bottom:18px;
+  }
+  .help-card ul li{padding-left:16px;position:relative;}
+  .help-card ul li::before{
+    content:'·';position:absolute;left:4px;
+    color:#8b5cf6;font-weight:700;
+  }
+  .help-card button{
+    background:#8b5cf6;color:#fff;border:none;
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:11px 24px;border-radius:48px;
+    cursor:pointer;width:100%;
+    letter-spacing:.05em;
+  }
+
+  @media (max-width:480px){
+    canvas{width:min(78vw, 320px);height:min(78vw, 320px);}
+    #wheelCanvas{width:140px;height:140px;}
+    .color-preview{width:100px;height:100px;}
+    .action-btn{padding:12px 28px;font-size:13px;min-width:150px;}
+    .choice-btn{padding:16px 18px;min-width:90px;}
+    .choice-btn .emoji{font-size:30px;}
+    .feedback-card{padding:22px 24px;}
+    .final-card{padding:26px 28px;}
+    #hint{display:none;}
+    #challengeTitle{font-size:14px;}
+    #challengeHint{font-size:11px;}
+    .color-result-square{width:64px;height:64px;}
+  }
+
+  @media (orientation:landscape) and (max-height:520px){
+    #game{padding:6px;gap:4px;}
+    canvas{width:min(50vw, 260px);height:min(50vw, 260px);}
+    #challengeTitle{font-size:13px;}
+    #challengeHint{display:none;}
+    #controls{gap:6px;padding:4px 0;}
+    .slider-value{font-size:18px;}
+    #hint{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<button id="muteBtn" title="Sound on/off">🔊</button>
+<button id="helpBtn" title="How to play">?</button>
+
+<div id="game">
+  <div id="bg"></div>
+
+  <div id="topBar">
+    <div id="levelIndicator">Level <b id="levelNum">1</b> / 10</div>
+    <div id="passCount" style="font-size:12px;color:#6b5b8a;letter-spacing:.15em;font-weight:500;"></div>
+  </div>
+  <div id="progressBar"><div id="progressFill"></div></div>
+
+  <div id="canvasWrap">
+    <canvas id="c" width="720" height="720"></canvas>
+  </div>
+
+  <div id="challengeTitle">Beaker</div>
+  <div id="challengeHint">How full is it?</div>
+
+  <div id="controls"></div>
+
+  <div id="feedback">
+    <div class="feedback-card">
+      <div class="feedback-icon" id="fbIcon">✅</div>
+      <div class="feedback-title" id="fbTitle">Nice!</div>
+      <div class="feedback-detail" id="fbDetail"></div>
+      <button class="feedback-btn" id="fbBtn">Next</button>
+    </div>
+  </div>
+
+  <div id="final">
+    <div class="final-card">
+      <div class="final-emoji" id="finalEmoji">🏆</div>
+      <div class="final-title">You <span class="accent">finished</span></div>
+      <div class="final-score" id="finalScore">10</div>
+      <div class="final-score-label" id="finalLabel">Levels Cleared</div>
+      <div class="final-msg" id="finalMsg"></div>
+      <button class="feedback-btn" id="finalBtn">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<div id="helpPanel">
+  <div class="help-card">
+    <h2>🎯 Guess It</h2>
+    <p>10 quick estimation challenges. Guess as close as you can to the real answer.</p>
+    <ul>
+      <li><b>Beaker</b> — guess the water %</li>
+      <li><b>Line Length</b> — guess the length in cm</li>
+      <li><b>3-Second Tap</b> — tap twice, feel the 3s</li>
+      <li><b>Dot Count</b> — count the dots</li>
+      <li><b>Hit the Center</b> — tap dead center</li>
+      <li><b>Angle</b> — guess the degrees</li>
+      <li><b>Color Match</b> — recreate the color</li>
+      <li><b>Weight</b> — pick the heavier one</li>
+      <li><b>Clock</b> — guess the angle between hands</li>
+      <li><b>Beat Keeper</b> — tap the beat</li>
+    </ul>
+    <p>Pass a level by guessing within ±8%. Fail = new random challenge, try again.</p>
+    <button id="helpClose">Got it</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+var TOTAL_LEVELS = 10;
+var SAVE_KEY = 'deadpool-guess-it-best';
+var TOLERANCE = 8;
+
+/* ============================================================
+   DOM
+   ============================================================ */
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W = canvas.width, H = canvas.height;
+
+var levelNum    = document.getElementById('levelNum');
+var passCount   = document.getElementById('passCount');
+var progressFill= document.getElementById('progressFill');
+var challengeTitle = document.getElementById('challengeTitle');
+var challengeHint  = document.getElementById('challengeHint');
+var controls    = document.getElementById('controls');
+var feedback    = document.getElementById('feedback');
+var fbIcon      = document.getElementById('fbIcon');
+var fbTitle     = document.getElementById('fbTitle');
+var fbDetail    = document.getElementById('fbDetail');
+var fbBtn       = document.getElementById('fbBtn');
+var finalEl     = document.getElementById('final');
+var finalEmoji  = document.getElementById('finalEmoji');
+var finalScore  = document.getElementById('finalScore');
+var finalLabel  = document.getElementById('finalLabel');
+var finalMsg    = document.getElementById('finalMsg');
+var finalBtn    = document.getElementById('finalBtn');
+var muteBtn     = document.getElementById('muteBtn');
+var helpBtn     = document.getElementById('helpBtn');
+var helpPanel   = document.getElementById('helpPanel');
+var helpClose   = document.getElementById('helpClose');
+
+/* ============================================================
+   STATE
+   ============================================================ */
+var currentLevel = 1;
+var levelsPassed = 0;
+var currentState = null;
+var bestScore = 0;
+try { bestScore = parseInt(localStorage.getItem(SAVE_KEY) || '0') || 0; } catch(e){}
+
+var soundOn = true;
+var audioCtx = null;
+
+/* ============================================================
+   AUDIO
+   ============================================================ */
+function initAudio(){
+  if (audioCtx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  } catch(e){ audioCtx = null; }
+}
+function playTone(freq, dur, type, vol){
+  if (!soundOn) return;
+  initAudio();
+  if (!audioCtx) return;
+  try {
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    osc.connect(g); g.connect(audioCtx.destination);
+    var now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol || 0.08, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.start(now); osc.stop(now + dur + 0.02);
+  } catch(e){}
+}
+function sndPass(){
+  playTone(880, 0.12, 'sine', 0.08);
+  setTimeout(function(){ playTone(1320, 0.18, 'sine', 0.08); }, 100);
+  setTimeout(function(){ playTone(1760, 0.22, 'sine', 0.07); }, 220);
+}
+function sndFail(){
+  playTone(220, 0.15, 'triangle', 0.08);
+  setTimeout(function(){ playTone(180, 0.22, 'triangle', 0.08); }, 100);
+}
+function sndTick(){ playTone(880, 0.05, 'sine', 0.06); }
+function sndWin(){
+  playTone(660, 0.15, 'sine', 0.08);
+  setTimeout(function(){ playTone(880, 0.15, 'sine', 0.08); }, 130);
+  setTimeout(function(){ playTone(1100, 0.2, 'sine', 0.08); }, 260);
+  setTimeout(function(){ playTone(1320, 0.4, 'sine', 0.09); }, 400);
+}
+muteBtn.addEventListener('click', function(){
+  soundOn = !soundOn;
+  muteBtn.textContent = soundOn ? '🔊' : '🔇';
+});
+
+helpBtn.addEventListener('click', function(){ helpPanel.classList.add('show'); });
+helpClose.addEventListener('click', function(){ helpPanel.classList.remove('show'); });
+helpPanel.addEventListener('click', function(e){
+  if (e.target === helpPanel) helpPanel.classList.remove('show');
+});
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function clearControls(){ controls.innerHTML = ''; }
+function clearCanvas(){ ctx.clearRect(0,0,W,H); }
+
+function updateTopBar(){
+  levelNum.textContent = currentLevel;
+  progressFill.style.width = ((currentLevel-1) / TOTAL_LEVELS * 100) + '%';
+  passCount.textContent = levelsPassed + ' passed';
+}
+
+function checkGuess(guess, actual, tolerance){
+  var diffPct = Math.abs(guess - actual) / Math.max(Math.abs(actual), 0.0001) * 100;
+  return diffPct <= tolerance;
+}
+
+function showFeedback(pass, detailHtml, onNext){
+  if (pass){
+    fbIcon.textContent = '✅';
+    fbTitle.textContent = 'Nice!';
+    fbTitle.className = 'feedback-title pass';
+    sndPass();
+  } else {
+    fbIcon.textContent = '❌';
+    fbTitle.textContent = 'Try again';
+    fbTitle.className = 'feedback-title fail';
+    sndFail();
+  }
+  if (typeof detailHtml === 'string'){
+    fbDetail.innerHTML = detailHtml;
+  } else {
+    fbDetail.innerHTML = '';
+    fbDetail.appendChild(detailHtml);
+  }
+  feedback.classList.add('show');
+  fbBtn.onclick = function(){
+    feedback.classList.remove('show');
+    onNext();
+  };
+}
+
+/* ============================================================
+   LEVEL 1: BEAKER
+   ============================================================ */
+function levelBeaker(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Beaker';
+  challengeHint.textContent = 'How full is the beaker?';
+
+  var pct = Math.random() * 80 + 10;
+  currentState = { pct: pct };
+  drawBeaker(pct);
+
+  var wrap = document.createElement('div');
+  wrap.className = 'slider-wrap';
+  wrap.innerHTML =
+    '<div class="slider-value" id="sliderVal">50%</div>' +
+    '<input type="range" id="slider" min="0" max="100" value="50" step="1">' +
+    '<div class="slider-labels"><span>0%</span><span>100%</span></div>';
+  controls.appendChild(wrap);
+
+  var slider = document.getElementById('slider');
+  var sliderVal = document.getElementById('sliderVal');
+  slider.addEventListener('input', function(){
+    sliderVal.textContent = slider.value + '%';
+  });
+
+  var btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.textContent = 'Lock In';
+  btn.onclick = function(){
+    var guess = parseFloat(slider.value);
+    submitGuess(guess, pct, function(pass){
+      var diff = Math.abs(guess - pct).toFixed(1);
+      showFeedback(pass,
+        'You guessed <b>' + guess + '%</b> — it was <b>' + pct.toFixed(1) + '%</b><br>' +
+        'You were off by ' + diff + '%',
+        advanceOrRetry);
+    });
+  };
+  controls.appendChild(btn);
+}
+
+function drawBeaker(pct){
+  var cx = W / 2;
+  var top = 120;
+  var bottom = H - 120;
+  var width = 240;
+  var left = cx - width/2;
+  var right = cx + width/2;
+  var fillH = (bottom - top) * (pct / 100);
+  var fillTop = bottom - fillH;
+
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(left, top);
+  ctx.lineTo(left, bottom);
+  ctx.lineTo(right, bottom);
+  ctx.lineTo(right, top);
+  ctx.stroke();
+
+  var grad = ctx.createLinearGradient(0, fillTop, 0, bottom);
+  grad.addColorStop(0, 'rgba(196, 181, 253, 0.85)');
+  grad.addColorStop(1, 'rgba(139, 92, 246, 0.85)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(left + 6, fillTop, width - 12, fillH - 6);
+
+  ctx.strokeStyle = 'rgba(196, 181, 253, 1)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (var x = left + 6; x <= right - 6; x += 4){
+    var y = fillTop + Math.sin(x * 0.08) * 2;
+    if (x === left + 6) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+/* ============================================================
+   LEVEL 2: LINE LENGTH
+   ============================================================ */
+function levelLine(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Line Length';
+  challengeHint.textContent = 'How long is the line? (in cm)';
+
+  var PX_PER_CM = 48;
+  var lengthPx = Math.floor(Math.random() * 480) + 96;
+  var lengthCm = lengthPx / PX_PER_CM;
+
+  currentState = { lengthCm: lengthCm, lengthPx: lengthPx };
+
+  var cx = W / 2;
+  var cy = H / 2;
+  var half = lengthPx / 2;
+
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - half, cy);
+  ctx.lineTo(cx + half, cy);
+  ctx.stroke();
+
+  ctx.fillStyle = '#8b5cf6';
+  ctx.beginPath();
+  ctx.arc(cx - half, cy, 6, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + half, cy, 6, 0, Math.PI*2);
+  ctx.fill();
+
+  var wrap = document.createElement('div');
+  wrap.className = 'slider-wrap';
+  wrap.innerHTML =
+    '<div class="slider-value" id="sliderVal">5.0 cm</div>' +
+    '<input type="range" id="slider" min="1" max="15" value="5" step="0.1">' +
+    '<div class="slider-labels"><span>1 cm</span><span>15 cm</span></div>';
+  controls.appendChild(wrap);
+
+  var slider = document.getElementById('slider');
+  var sliderVal = document.getElementById('sliderVal');
+  slider.addEventListener('input', function(){
+    sliderVal.textContent = parseFloat(slider.value).toFixed(1) + ' cm';
+  });
+
+  var btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.textContent = 'Lock In';
+  btn.onclick = function(){
+    var guess = parseFloat(slider.value);
+    submitGuess(guess, lengthCm, function(pass){
+      var diff = Math.abs(guess - lengthCm).toFixed(1);
+      showFeedback(pass,
+        'The line was <b>' + lengthCm.toFixed(1) + ' cm</b><br>You were off by ' + diff + ' cm',
+        advanceOrRetry);
+    });
+  };
+  controls.appendChild(btn);
+}
+
+/* ============================================================
+   LEVEL 3: 3-SECOND TAP
+   ============================================================ */
+function level3Sec(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = '3-Second Tap';
+  challengeHint.textContent = 'Tap start, then tap again at 3 seconds';
+
+  currentState = { startTime: 0, phase: 'idle', target: 3 };
+
+  ctx.fillStyle = '#6b5b8a';
+  ctx.font = '500 20px Outfit';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Ready when you are', W/2, H/2);
+
+  var btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.textContent = 'Start';
+  btn.onclick = function(){
+    if (currentState.phase === 'idle'){
+      currentState.phase = 'running';
+      currentState.startTime = performance.now();
+      btn.textContent = 'Tap at 3s';
+      btn.style.background = '#7c3aed';
+      ctx.fillStyle = '#8b5cf6';
+      ctx.font = '600 40px Outfit';
+      ctx.fillText('●', W/2, H/2);
+    } else if (currentState.phase === 'running'){
+      currentState.phase = 'done';
+      var elapsed = (performance.now() - currentState.startTime) / 1000;
+      var target = 3;
+      var toleranceSec = target * TOLERANCE / 100;
+      submitGuess(elapsed, target, function(p){
+        showFeedback(p,
+          'You tapped at <b>' + elapsed.toFixed(2) + 's</b><br>' +
+          'Target was ' + target + 's (±' + toleranceSec.toFixed(2) + 's allowed)',
+          advanceOrRetry);
+      });
+    }
+  };
+  controls.appendChild(btn);
+}
+
+/* ============================================================
+   LEVEL 4: DOT COUNT (10-15 dots, 2.5 seconds)
+   ============================================================ */
+function levelDots(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Dot Count';
+  challengeHint.textContent = 'Count the dots — you have 2.5 seconds';
+
+  var count = Math.floor(Math.random() * 6) + 10;
+  currentState = { count: count };
+
+  var dots = [];
+  var attempts = 0;
+  while (dots.length < count && attempts < 3000){
+    var d = {
+      x: 100 + Math.random() * (W - 200),
+      y: 100 + Math.random() * (H - 200),
+      r: 12
+    };
+    var ok = true;
+    for (var i=0; i<dots.length; i++){
+      var dx = dots[i].x - d.x, dy = dots[i].y - d.y;
+      if (dx*dx + dy*dy < 48*48){ ok = false; break; }
+    }
+    if (ok) dots.push(d);
+    attempts++;
+  }
+  currentState.dots = dots;
+
+  ctx.fillStyle = '#8b5cf6';
+  dots.forEach(function(d){
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  var countdownEl = document.createElement('div');
+  countdownEl.className = 'slider-wrap';
+  countdownEl.innerHTML = '<div class="slider-value" id="countdown">2.5</div>' +
+    '<div class="slider-labels"><span>Counting…</span><span></span></div>';
+  controls.appendChild(countdownEl);
+
+  var startTime = performance.now();
+  var countdownTimer = setInterval(function(){
+    var remaining = 2.5 - (performance.now() - startTime) / 1000;
+    var cd = document.getElementById('countdown');
+    if (cd) cd.textContent = Math.max(0, remaining).toFixed(1);
+    if (remaining <= 0){
+      clearInterval(countdownTimer);
+      clearCanvas();
+      ctx.fillStyle = '#6b5b8a';
+      ctx.font = '500 20px Outfit';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('How many?', W/2, H/2);
+      showSliderForDots();
+    }
+  }, 50);
+
+  function showSliderForDots(){
+    if (countdownEl) countdownEl.remove();
+    var wrap = document.createElement('div');
+    wrap.className = 'slider-wrap';
+    wrap.innerHTML =
+      '<div class="slider-value" id="sliderVal">12</div>' +
+      '<input type="range" id="slider" min="5" max="20" value="12" step="1">' +
+      '<div class="slider-labels"><span>5</span><span>20</span></div>';
+    controls.appendChild(wrap);
+
+    var slider = document.getElementById('slider');
+    var sliderVal = document.getElementById('sliderVal');
+    slider.addEventListener('input', function(){
+      sliderVal.textContent = slider.value;
+    });
+
+    var btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.textContent = 'Lock In';
+    btn.onclick = function(){
+      var guess = parseFloat(slider.value);
+      submitGuess(guess, count, function(pass){
+        var diff = Math.abs(guess - count);
+        showFeedback(pass,
+          'There were <b>' + count + '</b> dots<br>You were off by ' + diff,
+          advanceOrRetry);
+      });
+    };
+    controls.appendChild(btn);
+  }
+}
+
+/* ============================================================
+   LEVEL 5: HIT THE CENTER
+   ============================================================ */
+function levelCenter(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Hit the Center';
+  challengeHint.textContent = 'Tap where you think the center is';
+
+  var centerX = W/2;
+  var centerY = H/2;
+  var circleR = 240;
+
+  ctx.strokeStyle = '#e9e0f7';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, circleR, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, circleR * 0.7, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, circleR * 0.4, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#e9e0f7';
+  ctx.fill();
+
+  currentState = { centerX: centerX, centerY: centerY, circleR: circleR };
+
+  var clickDone = false;
+  canvas.style.cursor = 'crosshair';
+
+  function handleClick(e){
+    if (clickDone) return;
+    clickDone = true;
+
+    var rect = canvas.getBoundingClientRect();
+    var sx = W / rect.width;
+    var sy = H / rect.height;
+    var mx = (e.clientX - rect.left) * sx;
+    var my = (e.clientY - rect.top) * sy;
+
+    var dist = Math.sqrt((mx - centerX)*(mx - centerX) + (my - centerY)*(my - centerY));
+
+    var allowedPx = circleR * (TOLERANCE / 100);
+    var pass = dist <= allowedPx;
+
+    ctx.strokeStyle = '#5b8c4a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(mx, my, 12, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mx - 16, my); ctx.lineTo(mx + 16, my);
+    ctx.moveTo(mx, my - 16); ctx.lineTo(mx, my + 16);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#b23a6b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 10, 0, Math.PI*2);
+    ctx.stroke();
+
+    submitGuess(dist, 0, function(p){
+      showFeedback(p,
+        'You tapped <b>' + Math.round(dist) + ' px</b> from center<br>' +
+        'Allowed: ' + Math.round(allowedPx) + ' px (' + TOLERANCE + '% of radius)',
+        advanceOrRetry);
+    });
+  }
+
+  canvas.addEventListener('pointerdown', handleClick, { once: true });
+}
+
+/* ============================================================
+   LEVEL 6: ANGLE GUESS
+   ============================================================ */
+function levelAngle(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Angle Guess';
+  challengeHint.textContent = 'Guess the degrees';
+
+  var angle = Math.floor(Math.random() * 150) + 15;
+  currentState = { angle: angle };
+
+  var cx = W/2;
+  var cy = H * 0.6;
+  var length = 220;
+
+  ctx.strokeStyle = '#e9e0f7';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - length, cy);
+  ctx.lineTo(cx + length, cy);
+  ctx.stroke();
+
+  var rad = -angle * Math.PI / 180;
+  var x2 = cx + Math.cos(rad) * length;
+  var y2 = cy + Math.sin(rad) * length;
+
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(139,92,246,.7)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 70, rad, 0);
+  ctx.stroke();
+
+  var midRad = rad / 2;
+  var symX = cx + Math.cos(midRad) * 92;
+  var symY = cy + Math.sin(midRad) * 92;
+  ctx.fillStyle = '#8b5cf6';
+  ctx.font = 'italic 600 22px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('θ', symX, symY);
+
+  ctx.fillStyle = '#8b5cf6';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, Math.PI*2);
+  ctx.fill();
+
+  var wrap = document.createElement('div');
+  wrap.className = 'slider-wrap';
+  wrap.innerHTML =
+    '<div class="slider-value" id="sliderVal">90°</div>' +
+    '<input type="range" id="slider" min="0" max="180" value="90" step="1">' +
+    '<div class="slider-labels"><span>0°</span><span>180°</span></div>';
+  controls.appendChild(wrap);
+
+  var slider = document.getElementById('slider');
+  var sliderVal = document.getElementById('sliderVal');
+  slider.addEventListener('input', function(){
+    sliderVal.textContent = slider.value + '°';
+  });
+
+  var btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.textContent = 'Lock In';
+  btn.onclick = function(){
+    var guess = parseFloat(slider.value);
+    submitGuess(guess, angle, function(pass){
+      var diff = Math.abs(guess - angle).toFixed(0);
+      showFeedback(pass,
+        'The angle was <b>' + angle + '°</b><br>You were off by ' + diff + '°',
+        advanceOrRetry);
+    });
+  };
+  controls.appendChild(btn);
+}
+
+/* ============================================================
+   LEVEL 7: COLOR MATCH (color wheel + preview)
+   ============================================================ */
+function levelColor(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Color Match';
+  challengeHint.textContent = 'Memorize the color, then recreate it';
+
+  var targetR = Math.floor(Math.random() * 200) + 30;
+  var targetG = Math.floor(Math.random() * 200) + 30;
+  var targetB = Math.floor(Math.random() * 200) + 30;
+  currentState = { r: targetR, g: targetG, b: targetB };
+
+  var boxX = W/2 - 140;
+  var boxY = H/2 - 140;
+  var boxW = 280;
+  var boxH = 280;
+
+  function drawBox(r, g, b){
+    ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = '#241a3a';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(boxX, boxY, boxW, boxH);
+  }
+
+  drawBox(targetR, targetG, targetB);
+
+  var countdownEl = document.createElement('div');
+  countdownEl.className = 'slider-wrap';
+  countdownEl.innerHTML = '<div class="slider-value" id="countdown">3.0</div>' +
+    '<div class="slider-labels"><span>Memorize</span><span></span></div>';
+  controls.appendChild(countdownEl);
+
+  var startTime = performance.now();
+  var countdownTimer = setInterval(function(){
+    var remaining = 3 - (performance.now() - startTime) / 1000;
+    var cd = document.getElementById('countdown');
+    if (cd) cd.textContent = Math.max(0, remaining).toFixed(1);
+    if (remaining <= 0){
+      clearInterval(countdownTimer);
+      showColorWheel();
+    }
+  }, 50);
+
+  function showColorWheel(){
+    if (countdownEl) countdownEl.remove();
+    challengeHint.textContent = 'Recreate the color you saw';
+
+    clearCanvas();
+
+    ctx.strokeStyle = '#e9e0f7';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 16);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#e9e0f7';
+    ctx.font = '500 16px Outfit';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Use the wheel', W/2, H/2);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'color-picker-wrap';
+    wrap.innerHTML =
+      '<canvas id="wheelCanvas" width="360" height="360"></canvas>' +
+      '<div class="color-preview" id="colorPreview"></div>';
+    controls.appendChild(wrap);
+
+    var wheel = document.getElementById('wheelCanvas');
+    var wctx = wheel.getContext('2d');
+    var ww = wheel.width;
+    var wh = wheel.height;
+    var r = ww / 2;
+
+    for (var a = 0; a < 360; a++){
+      var startAngle = (a - 1) * Math.PI / 180;
+      var endAngle = (a + 1) * Math.PI / 180;
+      wctx.beginPath();
+      wctx.moveTo(r, r);
+      wctx.arc(r, r, r - 4, startAngle, endAngle);
+      wctx.closePath();
+      wctx.fillStyle = 'hsl(' + a + ', 100%, 50%)';
+      wctx.fill();
+    }
+    var grad = wctx.createRadialGradient(r, r, r * 0.5, r, r, r - 4);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    wctx.beginPath();
+    wctx.arc(r, r, r - 4, 0, Math.PI*2);
+    wctx.fillStyle = grad;
+    wctx.fill();
+
+    var wheelDataURL = wheel.toDataURL();
+    var img = new Image();
+    var pickerPos = { x: -1, y: -1 };
+
+    img.onload = function(){
+      wheel.style.background = 'url(' + wheelDataURL + ')';
+      wheel.style.backgroundSize = '100% 100%';
+      wctx.clearRect(0, 0, ww, wh);
+
+      function drawCrosshair(){
+        wctx.clearRect(0, 0, ww, wh);
+        if (pickerPos.x < 0) return;
+        wctx.strokeStyle = '#ffffff';
+        wctx.lineWidth = 3;
+        wctx.beginPath();
+        wctx.arc(pickerPos.x, pickerPos.y, 12, 0, Math.PI*2);
+        wctx.stroke();
+        wctx.strokeStyle = '#241a3a';
+        wctx.lineWidth = 1.5;
+        wctx.beginPath();
+        wctx.arc(pickerPos.x, pickerPos.y, 12, 0, Math.PI*2);
+        wctx.stroke();
+      }
+
+      function rgbFromWheel(x, y){
+        var dx = x - r;
+        var dy = y - r;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        var maxR = r - 4;
+        if (dist > maxR) dist = maxR;
+        var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        if (angle < 0) angle += 360;
+        var t = dist / maxR;
+        var l = 100 - t * 50;
+        var hue = angle;
+        var rgb = hslToRgb(hue / 360, 1, l / 100);
+        return rgb;
+      }
+
+      function handleWheelEvent(e){
+        var rect = wheel.getBoundingClientRect();
+        var sx = ww / rect.width;
+        var sy = wh / rect.height;
+        var cx = (e.clientX - rect.left) * sx;
+        var cy = (e.clientY - rect.top) * sy;
+        pickerPos.x = cx;
+        pickerPos.y = cy;
+        var rgb = rgbFromWheel(cx, cy);
+        document.getElementById('colorPreview').style.background =
+          'rgb(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ')';
+        currentState.userR = rgb.r;
+        currentState.userG = rgb.g;
+        currentState.userB = rgb.b;
+        drawCrosshair();
+      }
+
+      wheel.addEventListener('pointerdown', function(e){
+        wheel.setPointerCapture(e.pointerId);
+        handleWheelEvent(e);
+      });
+      wheel.addEventListener('pointermove', function(e){
+        if (e.buttons || e.pointerType === 'touch') handleWheelEvent(e);
+      });
+      wheel.addEventListener('touchmove', function(e){
+        e.preventDefault();
+        handleWheelEvent(e.touches[0]);
+      }, {passive:false});
+    };
+    img.src = wheelDataURL;
+
+    currentState.userR = 128;
+    currentState.userG = 128;
+    currentState.userB = 128;
+    document.getElementById('colorPreview').style.background = 'rgb(128,128,128)';
+
+    var btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.textContent = 'Lock In';
+    btn.onclick = function(){
+      var r = currentState.userR || 128;
+      var g = currentState.userG || 128;
+      var b = currentState.userB || 128;
+      var dist = Math.sqrt(Math.pow(r-targetR,2) + Math.pow(g-targetG,2) + Math.pow(b-targetB,2));
+      var maxDist = Math.sqrt(3 * 255 * 255);
+      var pctOff = dist / maxDist * 100;
+      var tolerance = TOLERANCE;
+      var pass = pctOff <= tolerance;
+
+      var wrapResult = document.createElement('div');
+      wrapResult.className = 'color-result-row';
+      wrapResult.innerHTML =
+        '<div class="color-result-item">' +
+          '<div class="color-result-square" style="background: rgb(' + targetR + ',' + targetG + ',' + targetB + ')"></div>' +
+          '<div class="color-result-label">Task</div>' +
+        '</div>' +
+        '<div class="color-result-item">' +
+          '<div class="color-result-square" style="background: rgb(' + r + ',' + g + ',' + b + ')"></div>' +
+          '<div class="color-result-label">Yours</div>' +
+        '</div>';
+
+      var msg = document.createElement('div');
+      msg.innerHTML = pass ? 'Great eye!' : 'Off by ' + pctOff.toFixed(1) + '%';
+
+      var combined = document.createElement('div');
+      combined.appendChild(wrapResult);
+      combined.appendChild(msg);
+
+      showFeedback(pass, combined, advanceOrRetry);
+    };
+    controls.appendChild(btn);
+  }
+}
+
+function hslToRgb(h, s, l){
+  var r, g, b;
+  if (s === 0){
+    r = g = b = l;
+  } else {
+    var hue2rgb = function(p, q, t){
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    var p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(b * 255)
+  };
+}
+
+/* ============================================================
+   LEVEL 8: WEIGHT GUESS
+   ============================================================ */
+function levelWeight(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Weigh It';
+  challengeHint.textContent = 'Which object is heavier?';
+
+  var objects = [
+    { emoji: '🪶', label: 'Feather', kg: 0.005 },
+    { emoji: '🍎', label: 'Apple', kg: 0.18 },
+    { emoji: '🏀', label: 'Basketball', kg: 0.62 },
+    { emoji: '🥔', label: 'Potato', kg: 0.15 },
+    { emoji: '🐦', label: 'Sparrow', kg: 0.03 },
+    { emoji: '📚', label: 'Book', kg: 0.5 },
+    { emoji: '🥥', label: 'Coconut', kg: 0.4 },
+    { emoji: '🐱', label: 'Cat', kg: 4.0 },
+    { emoji: '🐶', label: 'Small dog', kg: 7.0 },
+    { emoji: '🍉', label: 'Watermelon', kg: 5.0 },
+    { emoji: '📱', label: 'Phone', kg: 0.18 },
+    { emoji: '💻', label: 'Laptop', kg: 1.5 }
+  ];
+
+  var idxA = Math.floor(Math.random() * objects.length);
+  var idxB = Math.floor(Math.random() * objects.length);
+  while (idxB === idxA) idxB = Math.floor(Math.random() * objects.length);
+
+  var A = objects[idxA], B = objects[idxB];
+  var tries = 0;
+  while (Math.abs(A.kg - B.kg) < 0.05 && tries < 20){
+    idxB = Math.floor(Math.random() * objects.length);
+    B = objects[idxB];
+    tries++;
+  }
+
+  currentState = { A: A, B: B };
+
+  ctx.font = 'bold 96px Outfit';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#e9e0f7';
+  ctx.fillText('?', W/4, H/2);
+  ctx.fillText('?', W*3/4, H/2);
+
+  var row = document.createElement('div');
+  row.className = 'action-btn-row';
+  row.innerHTML =
+    '<button class="choice-btn" id="btnA">' +
+      '<span class="emoji">' + A.emoji + '</span>' +
+      '<span class="label">' + A.label + '</span>' +
+    '</button>' +
+    '<button class="choice-btn" id="btnB">' +
+      '<span class="emoji">' + B.emoji + '</span>' +
+      '<span class="label">' + B.label + '</span>' +
+    '</button>';
+  controls.appendChild(row);
+
+  function pick(choice){
+    var correct = A.kg > B.kg ? 'A' : 'B';
+    var pass = choice === correct;
+    var other = choice === 'A' ? B : A;
+
+    showFeedback(pass,
+      '<b>' + A.label + '</b> = ' + A.kg + ' kg<br>' +
+      '<b>' + B.label + '</b> = ' + B.kg + ' kg<br>' +
+      (pass ? 'Correct!' : 'The ' + other.label + ' was heavier'),
+      advanceOrRetry);
+  }
+
+  document.getElementById('btnA').onclick = function(){ pick('A'); };
+  document.getElementById('btnB').onclick = function(){ pick('B'); };
+}
+
+/* ============================================================
+   LEVEL 9: CLOCK GUESS
+   ============================================================ */
+function levelClock(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Clock Angle';
+  challengeHint.textContent = 'Guess the angle between the two hands';
+
+  var hourAngle = Math.random() * 360;
+  var minuteAngle = Math.random() * 360;
+
+  var diff = Math.abs(hourAngle - minuteAngle);
+  if (diff > 180) diff = 360 - diff;
+  currentState = { actual: diff };
+
+  var cx = W/2, cy = H/2, R = 240;
+
+  ctx.strokeStyle = '#e9e0f7';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.stroke();
+
+  ctx.fillStyle = '#e9e0f7';
+  for (var i=0; i<12; i++){
+    var a = i / 12 * Math.PI * 2 - Math.PI/2;
+    var r1 = R - 20;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1, 3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawHand(angle, length, width, color){
+    var rad = angle * Math.PI / 180 - Math.PI/2;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(rad) * length, cy + Math.sin(rad) * length);
+    ctx.stroke();
+  }
+
+  drawHand(hourAngle, R * 0.55, 10, '#8b5cf6');
+  drawHand(minuteAngle, R * 0.85, 6, '#6b5b8a');
+
+  var a1 = hourAngle * Math.PI / 180 - Math.PI/2;
+  var a2 = minuteAngle * Math.PI / 180 - Math.PI/2;
+  var arcDiff = a2 - a1;
+  while (arcDiff > Math.PI) arcDiff -= 2 * Math.PI;
+  while (arcDiff < -Math.PI) arcDiff += 2 * Math.PI;
+  var startA = arcDiff > 0 ? a1 : a2;
+  var endA = startA + Math.abs(arcDiff);
+
+  ctx.strokeStyle = 'rgba(139,92,246,.7)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R * 0.35, startA, endA);
+  ctx.stroke();
+
+  var midA = startA + Math.abs(arcDiff) / 2;
+  var symX = cx + Math.cos(midA) * R * 0.45;
+  var symY = cy + Math.sin(midA) * R * 0.45;
+  ctx.fillStyle = '#8b5cf6';
+  ctx.font = 'italic 600 24px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('θ', symX, symY);
+
+  ctx.fillStyle = '#241a3a';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, Math.PI*2);
+  ctx.fill();
+
+  var wrap = document.createElement('div');
+  wrap.className = 'slider-wrap';
+  wrap.innerHTML =
+    '<div class="slider-value" id="sliderVal">90°</div>' +
+    '<input type="range" id="slider" min="0" max="180" value="90" step="1">' +
+    '<div class="slider-labels"><span>0°</span><span>180°</span></div>';
+  controls.appendChild(wrap);
+
+  var slider = document.getElementById('slider');
+  var sliderVal = document.getElementById('sliderVal');
+  slider.addEventListener('input', function(){
+    sliderVal.textContent = slider.value + '°';
+  });
+
+  var btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.textContent = 'Lock In';
+  btn.onclick = function(){
+    var guess = parseFloat(slider.value);
+    submitGuess(guess, diff, function(pass){
+      var d = Math.abs(guess - diff).toFixed(0);
+      showFeedback(pass,
+        'The angle was <b>' + diff.toFixed(1) + '°</b><br>You were off by ' + d + '°',
+        advanceOrRetry);
+    });
+  };
+  controls.appendChild(btn);
+}
+
+/* ============================================================
+   LEVEL 10: BEAT KEEPER
+   ============================================================ */
+function levelBeat(){
+  clearCanvas();
+  clearControls();
+  challengeTitle.textContent = 'Beat Keeper';
+  challengeHint.textContent = '4 beats. Tap on the 5th beat.';
+
+  currentState = { phase: 'idle', tapTime: 0, beatTime: 0 };
+
+  ctx.fillStyle = '#6b5b8a';
+  ctx.font = '500 18px Outfit';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Listen to 4 beats, then tap', W/2, H/2 - 30);
+  ctx.fillText('on the 5th beat', W/2, H/2 + 10);
+
+  var btn = document.createElement('button');
+  btn.className = 'action-btn';
+  btn.textContent = 'Start Beats';
+  btn.onclick = function(){
+    if (currentState.phase !== 'idle') return;
+    currentState.phase = 'playing';
+    btn.disabled = true;
+    btn.textContent = 'Listening…';
+
+    var beatInterval = 700 + Math.random() * 300;
+    currentState.interval = beatInterval;
+
+    var beatCount = 0;
+    function beat(){
+      beatCount++;
+      playTone(1200, 0.05, 'sine', 0.08);
+      ctx.fillStyle = '#8b5cf6';
+      ctx.beginPath();
+      ctx.arc(W/2, H/2, 40, 0, Math.PI*2);
+      ctx.fill();
+      setTimeout(function(){
+        clearCanvas();
+        ctx.fillStyle = '#6b5b8a';
+        ctx.font = '500 18px Outfit';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Beat ' + beatCount + ' / 4', W/2, H/2);
+      }, 120);
+
+      if (beatCount < 4){
+        setTimeout(beat, beatInterval);
+      } else {
+        setTimeout(function(){
+          currentState.phase = 'tapping';
+          currentState.beatTime = performance.now();
+          btn.disabled = false;
+          btn.textContent = 'Tap!';
+          btn.style.background = '#7c3aed';
+          clearCanvas();
+          ctx.fillStyle = '#241a3a';
+          ctx.font = '600 24px Outfit';
+          ctx.fillText('Tap on the beat!', W/2, H/2);
+        }, beatInterval);
+      }
+    }
+    beat();
+  };
+
+  btn.addEventListener('click', function(){
+    if (currentState.phase === 'tapping'){
+      currentState.phase = 'done';
+      var elapsed = performance.now() - currentState.beatTime;
+      var interval = currentState.interval;
+      var expected = interval;
+      var diffMs = Math.abs(elapsed - expected);
+      var diffPct = (diffMs / expected) * 100;
+      var pass = diffPct <= TOLERANCE;
+
+      submitGuess(elapsed, expected, function(p){
+        showFeedback(p,
+          'You tapped <b>' + Math.round(elapsed) + ' ms</b> after the 4th beat<br>' +
+          'Ideal was ~' + Math.round(expected) + ' ms',
+          advanceOrRetry);
+      });
+    }
+  });
+
+  controls.appendChild(btn);
+}
+
+/* ============================================================
+   FLOW CONTROL
+   ============================================================ */
+function submitGuess(guess, actual, callback){
+  var pass = checkGuess(guess, actual, TOLERANCE);
+  callback(pass);
+}
+
+function advanceOrRetry(){
+  var wasPass = fbTitle.textContent === 'Nice!';
+  if (wasPass){
+    levelsPassed++;
+    if (levelsPassed >= TOTAL_LEVELS){
+      showFinal();
+      return;
+    }
+  }
+  currentLevel++;
+  if (currentLevel > TOTAL_LEVELS){
+    showFinal();
+    return;
+  }
+  startLevel(currentLevel);
+}
+
+function showFinal(){
+  sndWin();
+  finalScore.textContent = levelsPassed;
+  finalLabel.textContent = 'Levels Cleared';
+
+  var msg;
+  if (levelsPassed === 10) msg = "Perfect. You're a true estimator. 👑";
+  else if (levelsPassed >= 8) msg = "Fantastic — you have a great eye.";
+  else if (levelsPassed >= 6) msg = "Solid run. Give it another shot!";
+  else if (levelsPassed >= 3) msg = "Good start. Try again to beat your score.";
+  else msg = "Tough rounds — try again!";
+
+  finalMsg.textContent = msg;
+
+  if (levelsPassed > bestScore){
+    bestScore = levelsPassed;
+    try { localStorage.setItem(SAVE_KEY, bestScore.toString()); } catch(e){}
+  }
+  finalEl.classList.add('show');
+}
+
+finalBtn.addEventListener('click', function(){
+  finalEl.classList.remove('show');
+  currentLevel = 1;
+  levelsPassed = 0;
+  updateTopBar();
+  startLevel(1);
+});
+
+/* ============================================================
+   START LEVEL
+   ============================================================ */
+function startLevel(n){
+  updateTopBar();
+  var fns = [
+    levelBeaker,
+    levelLine,
+    level3Sec,
+    levelDots,
+    levelCenter,
+    levelAngle,
+    levelColor,
+    levelWeight,
+    levelClock,
+    levelBeat
+  ];
+  var fn = fns[n - 1];
+  if (fn) fn();
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+helpPanel.classList.add('show');
+startLevel(1);
+
+})();
+</script>
+</body>
+</html>

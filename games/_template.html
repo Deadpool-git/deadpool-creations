@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Game Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{
+    width:100%;height:100%;overflow:hidden;
+    background:#fef9f3;color:#3a3038;
+    font-family:'Outfit',system-ui,sans-serif;
+    user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- MAIN LAYOUT ---------- */
+  #game{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:#fef9f3;
+    overflow:hidden;
+    padding:8px;gap:8px;
+  }
+
+  /* soft background wash (customize per game) */
+  #bg{
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,154,139,.10) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(168,144,208,.10) 0%, transparent 45%);
+  }
+
+  /* ---------- HUD ---------- */
+  #hud{
+    position:relative;z-index:5;
+    width:min(94vw,86vh,560px);
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:2px 4px 0 4px;
+    flex-shrink:0;
+  }
+  .hud-block{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .hud-block.right{text-align:right;align-items:flex-end}
+  .hud-block.center{text-align:center;align-items:center;flex:1}
+  .hud-label{
+    font-size:clamp(8px,1.1vw,10px);
+    letter-spacing:.24em;
+    color:#a89aa8;
+    text-transform:uppercase;font-weight:500;
+    white-space:nowrap;
+  }
+  .hud-val{
+    font-size:clamp(18px,2.8vw,26px);
+    font-weight:400;
+    color:#3a3038;
+    line-height:1;
+    letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- CANVAS ---------- */
+  #canvasWrap{
+    position:relative;z-index:5;
+    padding:4px;border-radius:20px;
+    background:#fffaf5;
+    box-shadow:
+      0 24px 48px -16px rgba(120,90,110,.15),
+      0 4px 12px rgba(120,90,110,.05),
+      inset 0 0 0 1px rgba(255,255,255,.8);
+    flex-shrink:0;
+  }
+  canvas{
+    display:block;border-radius:14px;
+    background:#fdf6f0;
+    /* Responsive — fits any screen */
+    width:min(88vw, 76vh, 520px);
+    height:min(88vw, 76vh, 520px);
+    touch-action:none;
+    /* Prevent text selection on drag */
+    user-select:none;
+  }
+
+  /* ---------- ON-SCREEN CONTROLS ---------- */
+  /* Hidden by default on desktop (shown only on touch devices) */
+  #controls{
+    position:relative;z-index:5;
+    width:min(94vw,86vh,560px);
+    display:none;  /* JS enables on touch devices */
+    justify-content:space-between;
+    align-items:center;
+    padding:0 4px;
+    gap:12px;
+    flex-shrink:0;
+  }
+  .ctrl{
+    width:64px;height:64px;
+    border-radius:50%;
+    background:#fffaf5;
+    border:1.5px solid #f0e0d5;
+    color:#3a3038;
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;font-weight:300;
+    cursor:pointer;
+    transition:.12s;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    user-select:none;
+    box-shadow:0 4px 12px rgba(120,90,110,.08);
+  }
+  .ctrl:active,
+  .ctrl.pressed{
+    background:#ffe8e0;
+    border-color:#ff9a8b;
+    transform:scale(0.94);
+    color:#ff8573;
+  }
+  .ctrl-row{display:flex;gap:10px}
+  .ctrl.small{width:52px;height:52px;font-size:18px}
+
+  /* ---------- OVERLAYS ---------- */
+  #overlay, #intro, #pauseOverlay{
+    position:absolute;inset:4px;z-index:10;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(254,249,243,.94);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border-radius:14px;
+    animation:fadeIn .3s;
+  }
+  #overlay.show, #intro.show, #pauseOverlay.show{display:flex}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes fadeOut{
+    0%{opacity:1;transform:scale(1)}
+    100%{opacity:0;transform:scale(1.02)}
+  }
+
+  .panel{
+    text-align:center;
+    padding:clamp(20px,4vw,32px) clamp(20px,4vw,36px);
+    max-width:90vw;
+    animation:rise .5s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes rise{
+    0%{transform:translateY(14px);opacity:0}
+    100%{transform:translateY(0);opacity:1}
+  }
+  .panel-title{
+    font-size:clamp(26px,5vw,40px);
+    font-weight:300;letter-spacing:-.01em;
+    color:#3a3038;line-height:1;margin-bottom:4px;
+  }
+  .panel-title .accent{color:#ff9a8b;font-weight:500}
+  .panel-sub{
+    font-size:clamp(9px,1.3vw,11px);
+    color:#a89aa8;letter-spacing:.28em;
+    text-transform:uppercase;font-weight:500;
+    margin-bottom:20px;
+  }
+  .panel-score{
+    font-size:clamp(38px,8vw,60px);
+    font-weight:200;color:#3a3038;
+    line-height:1;letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;
+  }
+  .panel-score-label{
+    font-size:clamp(8px,1.1vw,10px);
+    color:#a89aa8;letter-spacing:.34em;
+    text-transform:uppercase;font-weight:500;
+    margin:8px 0 18px 0;
+  }
+  .panel-best{
+    font-size:clamp(10px,1.5vw,12px);
+    color:#a890d0;letter-spacing:.2em;
+    margin-bottom:20px;font-weight:500;
+  }
+  .panel-rules{
+    display:flex;flex-direction:column;gap:10px;
+    text-align:left;margin-bottom:22px;
+  }
+  .rule{
+    display:flex;align-items:flex-start;gap:10px;
+    font-size:clamp(11px,1.6vw,13px);
+    color:#3a3038;line-height:1.45;font-weight:400;
+  }
+  .rule-num{
+    flex-shrink:0;
+    width:24px;height:24px;border-radius:50%;
+    background:#fef0ea;color:#ff9a8b;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:600;font-size:12px;
+  }
+  .panel-count{
+    font-size:clamp(40px,8vw,64px);
+    font-weight:200;color:#ff9a8b;
+    line-height:1;letter-spacing:-.03em;
+    animation:countPop .9s ease-out;
+  }
+  @keyframes countPop{
+    0%{transform:scale(1.4);opacity:0}
+    50%{transform:scale(.95);opacity:1}
+    100%{transform:scale(1);opacity:1}
+  }
+  .panel-btn{
+    background:#ff9a8b;color:#fff;
+    border:none;
+    padding:14px 32px;
+    border-radius:48px;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(10px,1.5vw,12px);
+    font-weight:500;letter-spacing:.2em;
+    text-transform:uppercase;cursor:pointer;
+    transition:.25s;
+    box-shadow:0 10px 24px -8px rgba(255,154,139,.6);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .panel-btn:hover{
+    background:#ff8573;
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px -8px rgba(255,154,139,.7);
+  }
+  .panel-btn:active{transform:translateY(0)}
+
+  /* ---------- FLOATING BUTTONS (mute, pause) ---------- */
+  .float-btn{
+    position:fixed;
+    width:40px;height:40px;
+    border-radius:50%;
+    background:#fffaf5;
+    border:1px solid #f0e0d5;
+    color:#3a3038;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    transition:.15s;
+    z-index:30;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    box-shadow:0 4px 12px rgba(120,90,110,.08);
+  }
+  .float-btn:hover{background:#fff;transform:translateY(-1px)}
+  .float-btn:active{transform:scale(.94)}
+  #muteBtn{
+    top:14px;right:14px;
+    top:calc(14px + env(safe-area-inset-top));
+    right:calc(14px + env(safe-area-inset-right));
+  }
+  #pauseBtn{
+    top:14px;right:62px;
+    top:calc(14px + env(safe-area-inset-top));
+    right:calc(62px + env(safe-area-inset-right));
+  }
+
+  /* ---------- HINT ---------- */
+  #hint{
+    position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+    font-size:clamp(10px,1.3vw,12px);
+    color:#a89aa8;letter-spacing:.14em;
+    text-transform:uppercase;font-weight:500;
+    z-index:8;pointer-events:none;
+    opacity:1;transition:opacity .6s;
+    bottom:calc(14px + env(safe-area-inset-bottom));
+    text-align:center;
+    white-space:nowrap;
+  }
+  #hint.hide{opacity:0}
+
+  /* ---------- TOUCH-DEVICE ADJUSTMENTS ---------- */
+  body.touch #controls{display:flex}
+  body.touch #hint{display:none}       /* touch uses buttons, no keyboard hint */
+  body.touch .hud-label{letter-spacing:.2em}
+  body.touch #canvasWrap{padding:3px}
+
+  /* ---------- SMALL-SCREEN ---------- */
+  @media (max-width:520px){
+    #game{padding:4px;gap:4px}
+    #hud{width:96vw;padding:0}
+    #controls{width:96vw;padding:0}
+    .ctrl{width:60px;height:60px;font-size:22px}
+    .ctrl.small{width:48px;height:48px;font-size:16px}
+    .panel{padding:18px 22px}
+    #pauseBtn{right:60px}
+  }
+
+  /* ---------- LANDSCAPE PHONES ---------- */
+  @media (orientation:landscape) and (max-height:520px){
+    #hud{padding:0}
+    #hud-val{font-size:16px}
+    .hud-label{font-size:8px}
+    #canvasWrap{padding:2px}
+    #controls{width:auto;position:absolute;bottom:8px;left:8px;right:8px;pointer-events:none}
+    .ctrl{pointer-events:auto}
+    .panel-title{font-size:22px}
+    .panel-score{font-size:32px}
+    #hint{font-size:9px;bottom:4px}
+  }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="bg"></div>
+
+  <!-- Floating buttons -->
+  <button class="float-btn" id="pauseBtn" title="Pause">❚❚</button>
+  <button class="float-btn" id="muteBtn" title="Sound">🔊</button>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-block">
+      <div class="hud-label">Score</div>
+      <div class="hud-val" id="scoreVal">0</div>
+    </div>
+    <div class="hud-block center">
+      <div class="hud-label" id="centerLabel">Time</div>
+      <div class="hud-val" id="centerVal">0.0</div>
+    </div>
+    <div class="hud-block right">
+      <div class="hud-label">Best</div>
+      <div class="hud-val" id="bestVal">0</div>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvasWrap">
+    <canvas id="c" width="640" height="640"></canvas>
+
+    <!-- Intro / rules -->
+    <div id="intro" class="show">
+      <div class="panel">
+        <div class="panel-title">Game <span class="accent">Name</span></div>
+        <div class="panel-sub">rules</div>
+        <div class="panel-rules">
+          <div class="rule">
+            <div class="rule-num">1</div>
+            <div>Rule one goes here — describe the goal in one line</div>
+          </div>
+          <div class="rule">
+            <div class="rule-num">2</div>
+            <div>Rule two — describe the controls or mechanic</div>
+          </div>
+          <div class="rule">
+            <div class="rule-num">3</div>
+            <div>Rule three — describe how you lose</div>
+          </div>
+        </div>
+        <div class="panel-count" id="introCount">3</div>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div id="pauseOverlay">
+      <div class="panel">
+        <div class="panel-title">Paused</div>
+        <div class="panel-sub">take a breath</div>
+        <button class="panel-btn" id="resumeBtn">Resume</button>
+      </div>
+    </div>
+
+    <!-- Game over -->
+    <div id="overlay">
+      <div class="panel">
+        <div class="panel-title">Game <span class="accent">over</span></div>
+        <div class="panel-sub" id="ovSub">better luck next time</div>
+        <div class="panel-score" id="ovScore">0</div>
+        <div class="panel-score-label">Final Score</div>
+        <div class="panel-best" id="ovBest">Best: 0</div>
+        <button class="panel-btn" id="restartBtn">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- On-screen controls (shown only on touch devices) -->
+  <div id="controls">
+    <div class="ctrl" data-key="left"  aria-label="Left">◁</div>
+    <div class="ctrl-row">
+      <div class="ctrl small" data-key="action" aria-label="Action">●</div>
+      <div class="ctrl small" data-key="up" aria-label="Up">△</div>
+    </div>
+    <div class="ctrl" data-key="right" aria-label="Right">▷</div>
+  </div>
+
+  <div id="hint">Loading…</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   ⚙️ CONFIG — change these per game
+   ============================================================ */
+var GAME_NAME = 'Game Name';
+var SAVE_KEY = 'deadpool-template-best';
+
+/* ============================================================
+   📱 DETECT TOUCH DEVICE (enables on-screen controls)
+   ============================================================ */
+var isTouch = ('ontouchstart' in window) ||
+              (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+              (window.matchMedia && window.matchMedia('(hover: none)').matches);
+if (isTouch){
+  document.body.classList.add('touch');
+}
+
+/* ============================================================
+   🖼️ CANVAS SETUP
+   ============================================================ */
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W = canvas.width, H = canvas.height;
+
+/* ============================================================
+   🧩 DOM
+   ============================================================ */
+var scoreEl   = document.getElementById('scoreVal');
+var centerLbl = document.getElementById('centerLabel');
+var centerVal = document.getElementById('centerVal');
+var bestEl    = document.getElementById('bestVal');
+
+var intro        = document.getElementById('intro');
+var introCount   = document.getElementById('introCount');
+var pauseOverlay = document.getElementById('pauseOverlay');
+var resumeBtn    = document.getElementById('resumeBtn');
+var overlay      = document.getElementById('overlay');
+var ovSub        = document.getElementById('ovSub');
+var ovScore      = document.getElementById('ovScore');
+var ovBest       = document.getElementById('ovBest');
+var restartBtn   = document.getElementById('restartBtn');
+
+var pauseBtn = document.getElementById('pauseBtn');
+var muteBtn  = document.getElementById('muteBtn');
+var hintEl   = document.getElementById('hint');
+
+/* ============================================================
+   🔊 SOUND
+   ============================================================ */
+var audioCtx = null;
+var soundOn = true;
+
+function initAudio(){
+  if (audioCtx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  } catch(e){ audioCtx = null; }
+}
+function playTone(freq, dur, type, vol){
+  if (!soundOn) return;
+  initAudio();
+  if (!audioCtx) return;
+  try {
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    osc.connect(g); g.connect(audioCtx.destination);
+    var now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol || 0.08, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.start(now); osc.stop(now + dur + 0.02);
+  } catch(e){}
+}
+muteBtn.addEventListener('click', function(){
+  soundOn = !soundOn;
+  muteBtn.textContent = soundOn ? '🔊' : '🔇';
+});
+
+/* ============================================================
+   🎮 GAME STATE — customize per game
+   ============================================================ */
+var score = 0;
+var elapsed = 0;
+var running = false;
+var gameOver = false;
+var paused = false;
+var lastTime = 0;
+
+var best = 0;
+try { best = parseFloat(localStorage.getItem(SAVE_KEY) || '0') || 0; } catch(e){ best = 0; }
+bestEl.textContent = best.toString();
+
+/* ============================================================
+   ⌨️ INPUT — unified keyboard + on-screen controls + pointer
+   ============================================================ */
+var keys = {};                       // pressed state (unified)
+
+function pressKey(name){
+  if (keys[name]) return;
+  keys[name] = true;
+  onPress(name);
+}
+function releaseKey(name){
+  if (!keys[name]) return;
+  keys[name] = false;
+  onRelease(name);
+}
+
+// Keyboard
+document.addEventListener('keydown', function(e){
+  var k = e.key.toLowerCase();
+  var mapped = null;
+  if (k === 'arrowleft'  || k === 'a') mapped = 'left';
+  else if (k === 'arrowright' || k === 'd') mapped = 'right';
+  else if (k === 'arrowup'    || k === 'w') mapped = 'up';
+  else if (k === 'arrowdown'  || k === 's') mapped = 'down';
+  else if (k === ' ' || k === 'enter')      mapped = 'action';
+  else if (k === 'p' || k === 'escape'){ togglePause(); return; }
+
+  if (mapped){
+    e.preventDefault();
+    pressKey(mapped);
+  }
+});
+document.addEventListener('keyup', function(e){
+  var k = e.key.toLowerCase();
+  var mapped = null;
+  if (k === 'arrowleft'  || k === 'a') mapped = 'left';
+  else if (k === 'arrowright' || k === 'd') mapped = 'right';
+  else if (k === 'arrowup'    || k === 'w') mapped = 'up';
+  else if (k === 'arrowdown'  || k === 's') mapped = 'down';
+  else if (k === ' ' || k === 'enter')      mapped = 'action';
+  if (mapped) releaseKey(mapped);
+});
+
+// On-screen control buttons
+var ctrlBtns = document.querySelectorAll('#controls .ctrl');
+ctrlBtns.forEach(function(btn){
+  var key = btn.dataset.key;
+
+  function start(e){
+    e.preventDefault();
+    btn.classList.add('pressed');
+    pressKey(key);
+  }
+  function end(e){
+    e.preventDefault();
+    btn.classList.remove('pressed');
+    releaseKey(key);
+  }
+
+  btn.addEventListener('touchstart', start, {passive:false});
+  btn.addEventListener('touchend', end, {passive:false});
+  btn.addEventListener('touchcancel', end, {passive:false});
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('mouseup', end);
+  btn.addEventListener('mouseleave', end);
+});
+
+// Canvas pointer input (for games that tap the canvas directly)
+canvas.addEventListener('pointerdown', function(e){
+  var r = canvas.getBoundingClientRect();
+  var mx = (e.clientX - r.left) * (W / r.width);
+  var my = (e.clientY - r.top)  * (H / r.height);
+  onCanvasTap(mx, my);
+});
+
+/* ============================================================
+   🔁 GAME HOOKS — override these per game
+   ============================================================ */
+function onPress(name){ /* handle key press — e.g. jump, move */ }
+function onRelease(name){ /* handle key release */ }
+function onCanvasTap(x, y){ /* handle direct tap on canvas */ }
+function onGameUpdate(dt){ /* main game logic — dt in ms */ }
+function onGameRender(){ /* draw the game — canvas is cleared before */ }
+function onGameReset(){ /* called when starting a new game */ }
+function onGameOver(){ /* called when the player loses */ }
+
+/* ============================================================
+   🚦 GAME FLOW
+   ============================================================ */
+function reset(){
+  score = 0;
+  elapsed = 0;
+  gameOver = false;
+  paused = false;
+  running = false;
+
+  scoreEl.textContent = '0';
+  centerVal.textContent = '0.0';
+  overlay.classList.remove('show');
+  pauseOverlay.classList.remove('show');
+  intro.classList.add('show');
+  hintEl.textContent = isTouch ? 'Tap the buttons below' : 'Arrow keys / WASD · Space';
+  hintEl.classList.remove('hide');
+
+  if (typeof onGameReset === 'function') onGameReset();
+
+  // rules countdown
+  var count = 3;
+  introCount.textContent = count;
+  playTone(660, 0.06, 'sine', 0.05);
+  var iv = setInterval(function(){
+    count--;
+    if (count > 0){
+      introCount.textContent = count;
+      introCount.style.animation = 'none';
+      void introCount.offsetWidth;
+      introCount.style.animation = '';
+      playTone(660, 0.06, 'sine', 0.05);
+    } else {
+      clearInterval(iv);
+      introCount.textContent = 'GO';
+      playTone(990, 0.14, 'sine', 0.08);
+      setTimeout(function(){
+        intro.classList.remove('show');
+        start();
+      }, 400);
+    }
+  }, 1000);
+}
+
+function start(){
+  running = true;
+  gameOver = false;
+  lastTime = performance.now();
+  requestAnimationFrame(loop);
+}
+
+function die(){
+  if (gameOver) return;
+  gameOver = true;
+  running = false;
+
+  var final = Math.floor(score * 10) / 10;
+  if (final > best){
+    best = final;
+    try { localStorage.setItem(SAVE_KEY, best.toString()); } catch(e){}
+    bestEl.textContent = best.toString();
+  }
+
+  if (typeof onGameOver === 'function') onGameOver();
+
+  setTimeout(function(){
+    ovScore.textContent = final;
+    ovBest.textContent = 'Best: ' + best;
+    overlay.classList.add('show');
+  }, 400);
+}
+
+function togglePause(){
+  if (gameOver || !running) return;
+  paused = !paused;
+  if (paused){
+    pauseOverlay.classList.add('show');
+  } else {
+    pauseOverlay.classList.remove('show');
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+}
+
+pauseBtn.addEventListener('click', togglePause);
+resumeBtn.addEventListener('click', togglePause);
+
+restartBtn.addEventListener('click', reset);
+overlay.addEventListener('click', function(e){
+  if (e.target === overlay) reset();
+});
+
+// Auto-pause when the tab loses focus (prevents time jumps)
+document.addEventListener('visibilitychange', function(){
+  if (document.hidden && running && !paused){
+    togglePause();
+  }
+});
+
+/* ============================================================
+   🎬 MAIN LOOP
+   ============================================================ */
+function loop(now){
+  if (!running || paused) return;
+
+  var dt = Math.min(now - lastTime, 60);   // cap dt so tab-return doesn't jump
+  lastTime = now;
+
+  elapsed += dt / 1000;
+  centerVal.textContent = elapsed.toFixed(1);
+
+  if (typeof onGameUpdate === 'function') onGameUpdate(dt);
+
+  // Clear canvas + render
+  ctx.clearRect(0, 0, W, H);
+  if (typeof onGameRender === 'function') onGameRender();
+
+  if (running && !paused){
+    requestAnimationFrame(loop);
+  }
+}
+
+/* ============================================================
+   🚀 BOOT
+   ============================================================ */
+document.addEventListener('pointerdown', function(){ initAudio(); }, {once:true});
+reset();
+
+/* ============================================================
+   📚 HELPERS — reuse these across games
+   ============================================================ */
+
+// Rounded rectangle helper
+function roundRect(c, x, y, w, h, r){
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.arcTo(x+w, y, x+w, y+h, r);
+  c.arcTo(x+w, y+h, x, y+h, r);
+  c.arcTo(x, y+h, x, y, r);
+  c.arcTo(x, y, x+w, y, r);
+  c.closePath();
+}
+
+// Random helper
+function rand(a, b){ return a + Math.random() * (b - a); }
+function randInt(a, b){ return Math.floor(rand(a, b + 1)); }
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+// Expose for game logic
+window.gameHelpers = { roundRect: roundRect, rand: rand, randInt: randInt, clamp: clamp, lerp: lerp };
+
+})();
+</script>
+</body>
+</html>
