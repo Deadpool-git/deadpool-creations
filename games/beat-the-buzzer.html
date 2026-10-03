@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Beat the Buzzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;
+    background:#f4f4f5;color:#1c1c1e;
+    font-family:'Outfit',system-ui,sans-serif;
+    user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+
+  #game{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    background:#f4f4f5;
+    overflow:hidden;padding:12px;gap:12px;
+  }
+
+  #bg{
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(120,120,130,.10) 0%, transparent 50%),
+      radial-gradient(circle at 85% 80%, rgba(100,100,110,.08) 0%, transparent 50%);
+  }
+
+  #topBar{
+    position:relative;z-index:5;
+    width:min(94vw, 560px);
+    display:flex;justify-content:space-between;align-items:center;
+    padding:0 4px;
+    flex-shrink:0;
+  }
+  .hud-block{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .hud-block.right{text-align:right;align-items:flex-end}
+  .hud-label{
+    font-size:clamp(8px,1.1vw,10px);
+    letter-spacing:.24em;
+    color:#71717a;
+    text-transform:uppercase;font-weight:600;
+    white-space:nowrap;
+  }
+  .hud-val{
+    font-size:clamp(20px,3vw,26px);
+    font-weight:600;
+    color:#1c1c1e;line-height:1;
+    letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  .hud-val.round{color:#52525b}
+
+  #lives{display:flex;gap:6px;align-items:center;}
+  .life{width:16px;height:16px;border-radius:50%;background:#52525b;transition:background .3s, transform .3s;}
+  .life.lost{background:#e4e4e7;transform:scale(.85);}
+
+  #timerWrap{
+    position:relative;z-index:5;
+    width:min(94vw, 560px);
+    height:14px;background:#e4e4e7;
+    border-radius:20px;overflow:hidden;flex-shrink:0;
+    box-shadow:inset 0 1px 3px rgba(60,60,70,.08);
+  }
+  #timerFill{
+    height:100%;width:100%;background:#22c55e;
+    border-radius:20px;
+    transition:width .05s linear, background .2s ease;
+    will-change:width;
+  }
+  #timerFill.warning{background:#f59e0b}
+  #timerFill.danger{background:#ef4444}
+
+  #challengeCard{
+    position:relative;z-index:5;
+    width:min(94vw, 560px);
+    min-height:min(72vw, 400px);
+    padding:28px 24px;
+    background:#fafafa;
+    border-radius:24px;
+    box-shadow:
+      0 20px 40px -16px rgba(60,60,70,.15),
+      0 4px 12px rgba(60,60,70,.05),
+      inset 0 0 0 1px rgba(255,255,255,.9);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:20px;flex-shrink:1;overflow:hidden;
+  }
+
+  #challengeType{
+    position:absolute;top:14px;left:50%;
+    transform:translateX(-50%);
+    font-size:clamp(9px,1.2vw,11px);
+    color:#71717a;letter-spacing:.3em;
+    text-transform:uppercase;font-weight:600;
+    white-space:nowrap;
+  }
+
+  #challengeTitle{
+    font-size:clamp(22px,3.6vw,30px);
+    font-weight:300;letter-spacing:-.01em;
+    color:#1c1c1e;line-height:1.15;
+    text-align:center;margin-top:14px;
+  }
+  #challengeTitle b{font-weight:700;color:#18181b;}
+
+  .big-tap-btn{
+    background:#27272a;color:#fafafa;border:none;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(18px,2.6vw,22px);
+    font-weight:700;letter-spacing:.05em;
+    padding:26px 52px;border-radius:24px;
+    cursor:pointer;transition:transform .08s, background .15s;
+    text-transform:uppercase;
+    min-width:min(60vw, 240px);
+    box-shadow:0 8px 20px -6px rgba(60,60,70,.4);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .big-tap-btn:active{transform:scale(.95);background:#18181b;}
+
+  .big-counter{
+    font-size:clamp(48px,8vw,72px);
+    font-weight:200;color:#52525b;line-height:1;
+    letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+  }
+
+  .tile-grid{
+    display:grid;grid-template-columns:1fr 1fr;
+    gap:14px;width:min(80vw, 340px);
+  }
+  .tile-btn{
+    padding:22px 20px;border-radius:16px;
+    background:#e4e4e7;border:none;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(16px,2.2vw,20px);
+    font-weight:600;color:#1c1c1e;cursor:pointer;
+    transition:transform .1s, background .15s;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    text-transform:uppercase;
+  }
+  .tile-btn:active{transform:scale(.96);background:#d4d4d8;}
+
+  .hold-btn{
+    background:#27272a;color:#fafafa;border:none;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(16px,2.2vw,20px);
+    font-weight:700;letter-spacing:.05em;
+    padding:30px 60px;border-radius:24px;
+    cursor:pointer;transition:transform .1s, background .15s;
+    text-transform:uppercase;
+    min-width:min(60vw, 240px);
+    box-shadow:0 8px 20px -6px rgba(60,60,70,.4);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .hold-btn.holding{background:#84cc16;}
+  .hold-btn:active{transform:scale(.97);}
+
+  /* Falling shapes arena */
+  .falling-arena{
+    position:relative;
+    width:100%;
+    height:min(58vw, 300px);
+    background:#f0f0f2;
+    border-radius:16px;
+    overflow:hidden;
+    touch-action:none;
+  }
+  .falling-shape{
+    position:absolute;
+    top:-100px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    user-select:none;
+    will-change:transform;
+  }
+
+  .swipe-pad{
+    width:min(60vw, 220px);
+    height:min(60vw, 220px);
+    background:#e4e4e7;
+    border-radius:24px;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .swipe-pad .arrow{
+    font-size:80px;
+    color:#27272a;
+    font-weight:300;
+    line-height:1;
+  }
+  .swipe-pad .hint-txt{
+    position:absolute;
+    bottom:12px;left:50%;
+    transform:translateX(-50%);
+    font-size:10px;color:#71717a;
+    letter-spacing:.2em;text-transform:uppercase;font-weight:600;
+  }
+
+  .decoy-btn{
+    background:#27272a;color:#fafafa;border:none;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(16px,2.2vw,20px);
+    font-weight:700;letter-spacing:.05em;
+    padding:26px 52px;border-radius:24px;
+    cursor:pointer;text-transform:uppercase;
+    min-width:min(60vw, 240px);
+    box-shadow:0 8px 20px -6px rgba(60,60,70,.4);
+    animation:pulseRed .6s ease-in-out infinite;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  @keyframes pulseRed{
+    0%,100%{box-shadow:0 8px 20px -6px rgba(60,60,70,.4); background:#27272a}
+    50%{box-shadow:0 8px 30px -4px rgba(190,18,60,.8); background:#be123c}
+  }
+
+  #flash{
+    position:absolute;inset:0;z-index:20;
+    pointer-events:none;background:#84cc16;
+    opacity:0;transition:opacity .18s;border-radius:24px;
+  }
+  #flash.show{opacity:.35;}
+  #flash.fail{background:#be123c;opacity:.35;}
+
+  #intro, #overlay{
+    position:absolute;inset:0;z-index:25;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(244,244,245,.96);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    animation:fadeIn .3s;padding:20px;
+  }
+  #intro.show, #overlay.show{display:flex;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  .card{
+    text-align:center;
+    padding:clamp(24px,4vw,36px) clamp(26px,4vw,40px);
+    max-width:92%;
+    animation:rise .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes rise{
+    0%{transform:translateY(14px);opacity:0}
+    100%{transform:translateY(0);opacity:1}
+  }
+
+  .card-title{
+    font-size:clamp(30px,5vw,42px);
+    font-weight:300;letter-spacing:-.01em;
+    color:#18181b;line-height:1;margin-bottom:4px;
+  }
+  .card-title .accent{color:#be123c;font-weight:500}
+  .card-sub{
+    font-size:clamp(9px,1.2vw,11px);
+    color:#71717a;letter-spacing:.3em;
+    text-transform:uppercase;font-weight:600;
+    margin-bottom:24px;
+  }
+  .rules{
+    display:flex;flex-direction:column;gap:10px;
+    text-align:left;margin-bottom:26px;
+  }
+  .rule{
+    display:flex;align-items:flex-start;gap:12px;
+    font-size:clamp(11px,1.5vw,13px);
+    color:#27272a;line-height:1.45;font-weight:400;
+  }
+  .rule strong{color:#27272a;font-weight:600}
+  .rule-num{
+    flex-shrink:0;width:24px;height:24px;border-radius:50%;
+    background:#e4e4e7;color:#52525b;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:12px;
+  }
+  .count{
+    font-size:clamp(44px,7vw,64px);
+    font-weight:200;color:#52525b;line-height:1;
+    letter-spacing:-.03em;animation:countPop .9s ease-out;
+  }
+  @keyframes countPop{
+    0%{transform:scale(1.4);opacity:0}
+    50%{transform:scale(.95);opacity:1}
+    100%{transform:scale(1);opacity:1}
+  }
+
+  .result-title{
+    font-size:clamp(28px,4.5vw,40px);
+    font-weight:300;letter-spacing:-.01em;
+    color:#18181b;line-height:1;margin-bottom:8px;
+  }
+  .result-title .accent{color:#be123c;font-weight:500}
+  .result-score{
+    font-size:clamp(56px,10vw,88px);
+    font-weight:200;color:#52525b;
+    line-height:.9;letter-spacing:-.04em;
+    font-variant-numeric:tabular-nums;margin:12px 0;
+  }
+  .result-score-label{
+    font-size:clamp(9px,1.2vw,11px);
+    color:#71717a;letter-spacing:.35em;
+    text-transform:uppercase;font-weight:600;
+    margin-bottom:10px;
+  }
+  .result-best{
+    font-size:clamp(11px,1.4vw,13px);
+    color:#52525b;letter-spacing:.2em;
+    text-transform:uppercase;font-weight:600;
+    margin-bottom:24px;
+  }
+
+  .card-btn{
+    background:#27272a;color:#fafafa;border:none;
+    padding:14px 38px;border-radius:48px;
+    font-family:'Outfit',sans-serif;
+    font-size:clamp(11px,1.4vw,13px);
+    font-weight:600;letter-spacing:.2em;
+    text-transform:uppercase;cursor:pointer;
+    transition:.25s;
+    box-shadow:0 10px 24px -8px rgba(60,60,70,.6);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .card-btn:hover{background:#18181b;transform:translateY(-2px);}
+
+  #restartBtnTop{
+    position:fixed;
+    top:calc(14px + env(safe-area-inset-top));
+    right:calc(14px + env(safe-area-inset-right));
+    z-index:30;width:38px;height:38px;border-radius:50%;
+    background:#fafafa;border:1px solid #e4e4e7;
+    color:#52525b;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;font-weight:500;
+    box-shadow:0 4px 12px rgba(60,60,70,.08);
+    transition:.2s;line-height:1;padding-bottom:3px;
+  }
+  #restartBtnTop:hover{background:#fff;transform:translateY(-1px)}
+
+  #hint{
+    position:fixed;
+    bottom:calc(10px + env(safe-area-inset-bottom));
+    left:50%;transform:translateX(-50%);
+    font-size:11px;color:#a1a1aa;
+    letter-spacing:.15em;text-transform:uppercase;font-weight:500;
+    z-index:8;pointer-events:none;
+    text-align:center;white-space:nowrap;opacity:.9;
+  }
+
+  @media (max-width:520px){
+    #game{padding:8px;gap:8px}
+    #challengeCard{min-height:min(78vw, 380px);padding:22px 18px;gap:16px}
+    #hint{display:none}
+    .tile-grid{gap:10px;width:min(80vw, 320px)}
+    .tile-btn{padding:18px 14px}
+    .swipe-pad{width:min(68vw, 200px);height:min(68vw, 200px)}
+    .swipe-pad .arrow{font-size:64px}
+    .falling-arena{height:min(64vw, 260px)}
+  }
+</style>
+</head>
+<body>
+
+<button id="restartBtnTop" title="Restart">↻</button>
+
+<div id="game">
+  <div id="bg"></div>
+
+  <div id="topBar">
+    <div class="hud-block">
+      <div class="hud-label">Round</div>
+      <div class="hud-val round" id="roundVal">1</div>
+    </div>
+    <div class="hud-block right">
+      <div class="hud-label">Lives</div>
+      <div id="lives"></div>
+    </div>
+  </div>
+
+  <div id="timerWrap"><div id="timerFill"></div></div>
+
+  <div id="challengeCard">
+    <div id="challengeType">Get Ready</div>
+    <div id="challengeTitle">Wait…</div>
+    <div id="challengeBody"></div>
+    <div id="flash"></div>
+  </div>
+
+  <div id="intro" class="show">
+    <div class="card">
+      <div class="card-title">Beat the <span class="accent">Buzzer</span></div>
+      <div class="card-sub">quick challenges · fast fingers</div>
+      <div class="rules">
+        <div class="rule">
+          <div class="rule-num">1</div>
+          <div>Each round shows a <strong>random mini-challenge</strong></div>
+        </div>
+        <div class="rule">
+          <div class="rule-num">2</div>
+          <div>You have <strong>3 seconds</strong> to finish it — timer shrinks as you go</div>
+        </div>
+        <div class="rule">
+          <div class="rule-num">3</div>
+          <div>Fail or run out of time → <strong>lose a life</strong>. 3 lives.</div>
+        </div>
+      </div>
+      <div class="count" id="introCount">3</div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div class="card">
+      <div class="result-title">Game <span class="accent">over</span></div>
+      <div class="card-sub">you survived</div>
+      <div class="result-score" id="ovRound">0</div>
+      <div class="result-score-label">Rounds Cleared</div>
+      <div class="result-best" id="ovBest">Best: 0</div>
+      <button class="card-btn" id="restartBtn">Try Again</button>
+    </div>
+  </div>
+
+  <div id="hint">Complete the challenge before the timer runs out</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+var MAX_LIVES = 3;
+var BASE_TIME = 3.0;
+var MIN_TIME = 2.0;
+var TIME_SHRINK_PER_3 = 0.15;
+var SAVE_KEY = 'deadpool-buzzer-best';
+
+/* ============================================================
+   DOM
+   ============================================================ */
+var roundVal = document.getElementById('roundVal');
+var livesEl = document.getElementById('lives');
+var timerFill = document.getElementById('timerFill');
+var challengeCard = document.getElementById('challengeCard');
+var challengeType = document.getElementById('challengeType');
+var challengeTitle = document.getElementById('challengeTitle');
+var challengeBody = document.getElementById('challengeBody');
+var flash = document.getElementById('flash');
+
+var intro = document.getElementById('intro');
+var introCount = document.getElementById('introCount');
+var overlay = document.getElementById('overlay');
+var ovRound = document.getElementById('ovRound');
+var ovBest = document.getElementById('ovBest');
+var restartBtn = document.getElementById('restartBtn');
+var restartBtnTop = document.getElementById('restartBtnTop');
+
+/* ============================================================
+   STATE
+   ============================================================ */
+var round = 1;
+var lives = MAX_LIVES;
+var phase = 'idle';
+var timeLeft = 0;
+var roundDuration = BASE_TIME;
+var roundStartTime = 0;
+var rafId = null;
+var lastTickAt = 0;
+var currentChallenge = null;
+var challengeData = { lastPick: null };
+var resolved = false;
+
+var best = 0;
+try { best = parseInt(localStorage.getItem(SAVE_KEY) || '0') || 0; } catch(e){}
+
+/* Track rafIds inside challenges so we can cancel on resolve */
+var activeTimers = [];
+function clearActiveTimers(){
+  for (var i = 0; i < activeTimers.length; i++){
+    cancelAnimationFrame(activeTimers[i]);
+    clearInterval(activeTimers[i]);
+    clearTimeout(activeTimers[i]);
+  }
+  activeTimers = [];
+}
+
+/* ============================================================
+   AUDIO
+   ============================================================ */
+var audioCtx = null;
+var soundOn = true;
+function initAudio(){
+  if (audioCtx) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  } catch(e){ audioCtx = null; }
+}
+function playTone(freq, dur, type, vol){
+  if (!soundOn) return;
+  initAudio();
+  if (!audioCtx) return;
+  try {
+    var osc = audioCtx.createOscillator();
+    var g = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    osc.connect(g); g.connect(audioCtx.destination);
+    var now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol || 0.08, now + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.start(now); osc.stop(now + dur + 0.02);
+  } catch(e){}
+}
+function sndRoundStart(){ playTone(880, 0.1, 'sine', 0.07); }
+function sndSuccess(){
+  playTone(880, 0.09, 'sine', 0.08);
+  setTimeout(function(){ playTone(1320, 0.14, 'sine', 0.08); }, 90);
+}
+function sndFail(){
+  playTone(220, 0.16, 'triangle', 0.1);
+  setTimeout(function(){ playTone(160, 0.22, 'triangle', 0.1); }, 110);
+}
+function sndGameOver(){
+  playTone(440, 0.15, 'sine', 0.08);
+  setTimeout(function(){ playTone(330, 0.2, 'sine', 0.08); }, 130);
+  setTimeout(function(){ playTone(220, 0.3, 'sine', 0.08); }, 280);
+}
+function sndTick(){ playTone(1200, 0.04, 'square', 0.04); }
+function sndFailShort(){ playTone(300, 0.12, 'triangle', 0.08); }
+function sndHit(){ playTone(700, 0.05, 'sine', 0.06); }
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function shuffle(a){
+  for (var i = a.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+function rand(min, max){ return min + Math.random() * (max - min); }
+function randInt(min, max){ return Math.floor(rand(min, max + 1)); }
+
+/* ============================================================
+   CHALLENGE 1 — RAPID TAP (8-10 taps)
+   ============================================================ */
+function challengeRapidTap(){
+  var target = randInt(8, 10);
+  var count = 0;
+  return {
+    type: 'Rapid Tap',
+    title: 'Tap <b>' + target + '</b> times',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div class="big-counter" id="tapCount">0 / ' + target + '</div>' +
+        '<button class="big-tap-btn" id="tapBtn">TAP</button>';
+      var btn = document.getElementById('tapBtn');
+      var counter = document.getElementById('tapCount');
+      function doTap(e){
+        if (e) e.preventDefault();
+        if (resolved) return;
+        count++;
+        counter.textContent = count + ' / ' + target;
+        playTone(600 + count * 30, 0.04, 'sine', 0.05);
+        if (count >= target) succeed();
+      }
+      btn.addEventListener('click', doTap);
+      btn.addEventListener('touchstart', doTap, {passive:false});
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 2 — HOLD IT
+   ============================================================ */
+function challengeHoldIt(){
+  var targetHold = 1.3 + Math.random() * 0.4;
+  var holdWindow = 0.3;
+  return {
+    type: 'Hold It',
+    title: 'Hold for <b>' + targetHold.toFixed(1) + 's</b>',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div class="big-counter" id="holdCounter">0.0s</div>' +
+        '<button class="hold-btn" id="holdBtn">HOLD</button>';
+      var btn = document.getElementById('holdBtn');
+      var counter = document.getElementById('holdCounter');
+      var holding = false;
+      var startT = 0;
+      var tickId = null;
+      function startHold(e){
+        if (e) e.preventDefault();
+        if (resolved || holding) return;
+        holding = true;
+        startT = performance.now();
+        btn.classList.add('holding');
+        btn.textContent = 'HOLDING…';
+        tickId = setInterval(function(){
+          var held = (performance.now() - startT) / 1000;
+          counter.textContent = held.toFixed(1) + 's';
+        }, 50);
+      }
+      function endHold(e){
+        if (e) e.preventDefault();
+        if (!holding || resolved) return;
+        holding = false;
+        clearInterval(tickId);
+        btn.classList.remove('holding');
+        var held = (performance.now() - startT) / 1000;
+        var diff = Math.abs(held - targetHold);
+        if (diff <= holdWindow) succeed();
+        else fail();
+      }
+      btn.addEventListener('mousedown', startHold);
+      btn.addEventListener('mouseup', endHold);
+      btn.addEventListener('mouseleave', endHold);
+      btn.addEventListener('touchstart', startHold, {passive:false});
+      btn.addEventListener('touchend', endHold, {passive:false});
+      btn.addEventListener('touchcancel', endHold, {passive:false});
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 3 — FALLING SHAPES (tap the target shape)
+   ============================================================ */
+function challengeFallingShapes(){
+  var ALL_SHAPES = [
+    { key:'circle',   glyph:'●', label:'Circle' },
+    { key:'square',   glyph:'■', label:'Square' },
+    { key:'triangle', glyph:'▲', label:'Triangle' },
+    { key:'star',     glyph:'★', label:'Star' },
+    { key:'diamond',  glyph:'◆', label:'Diamond' },
+    { key:'hexagon',  glyph:'⬢', label:'Hexagon' }
+  ];
+  var shuffledAll = shuffle(ALL_SHAPES.slice());
+  var target = shuffledAll[0];
+  var distractors = shuffledAll.slice(1, 5);
+  var allOnScreen = shuffle([target].concat(distractors));
+
+  return {
+    type: 'Catch the ' + target.label,
+    title: 'Tap the <b>' + target.label.toLowerCase() + '</b>',
+    body: function(){
+      // Build the arena element
+      challengeBody.innerHTML =
+        '<div class="falling-arena" id="arena"></div>';
+
+      var arena = document.getElementById('arena');
+      if (!arena) return;
+
+      // Wait a frame so the arena has real dimensions in the layout
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          var arenaW = arena.clientWidth || arena.offsetWidth || 300;
+          var arenaH = arena.clientHeight || arena.offsetHeight || 260;
+
+          var count = allOnScreen.length;
+          var spacing = arenaW / (count + 1);
+
+          allOnScreen.forEach(function(shape, idx){
+            var el = document.createElement('div');
+            el.className = 'falling-shape';
+            var size = rand(50, 74);
+            el.style.width = size + 'px';
+            el.style.height = size + 'px';
+            el.style.fontSize = Math.round(size * 0.62) + 'px';
+            el.style.lineHeight = size + 'px';
+            el.style.textAlign = 'center';
+            el.style.color = shape.key === target.key ? '#27272a' : '#a1a1aa';
+            el.textContent = shape.glyph;
+            el.dataset.key = shape.key;
+
+            var startX = spacing * (idx + 1) - size / 2;
+            el.style.left = startX + 'px';
+            el.style.top = '0px';
+
+            var speed = rand(80, 180);         // px/s — random per shape
+            var startDelay = idx * rand(60, 180);  // ms
+            var startY = -size - idx * 30;
+
+            el.style.transform = 'translateY(' + startY + 'px)';
+            arena.appendChild(el);
+
+            var spawned = false;
+            var spawnTime = performance.now() + startDelay;
+            var animStartTime = 0;
+
+            function step(now){
+              if (resolved) return;
+              if (!spawned){
+                if (now < spawnTime){
+                  requestAnimationFrame(step);
+                  return;
+                }
+                spawned = true;
+                animStartTime = now;
+              }
+              var elapsed = (now - animStartTime) / 1000;
+              var y = startY + speed * elapsed;
+              el.style.transform = 'translateY(' + y + 'px)';
+              // Keep animating until off-screen (or resolved)
+              if (y < arenaH + 100){
+                requestAnimationFrame(step);
+              }
+            }
+            var rid = requestAnimationFrame(step);
+            activeTimers.push(rid);
+
+            function handleCatch(e){
+              if (e) e.preventDefault();
+              if (resolved) return;
+              if (el.dataset.key === target.key){
+                sndHit();
+                succeed();
+              } else {
+                sndFailShort();
+                fail();
+              }
+            }
+            el.addEventListener('click', handleCatch);
+            el.addEventListener('touchstart', handleCatch, {passive:false});
+          });
+        });
+      });
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 4 — SWIPE (arrow shows different direction)
+   ============================================================ */
+function challengeSwipe(){
+  var dirs = ['up', 'down', 'left', 'right'];
+  var target = dirs[Math.floor(Math.random() * 4)];
+  // Pick a DIFFERENT direction for the arrow to display (confusing)
+  var others = dirs.filter(function(d){ return d !== target; });
+  var displayDir = others[Math.floor(Math.random() * others.length)];
+
+  var targetArrow = { up:'↑', down:'↓', left:'←', right:'→' }[target];
+  var displayArrow = { up:'↑', down:'↓', left:'←', right:'→' }[displayDir];
+
+  return {
+    type: 'Swipe',
+    title: 'Swipe <b>' + target + '</b>',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div class="swipe-pad" id="swipePad">' +
+          '<div class="arrow">' + displayArrow + '</div>' +
+          '<div class="hint-txt">swipe ' + target + '</div>' +
+        '</div>';
+      var pad = document.getElementById('swipePad');
+      var sx = 0, sy = 0;
+      var THRESHOLD = 30;
+
+      function checkDir(dx, dy){
+        if (Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
+        var detected;
+        if (Math.abs(dx) > Math.abs(dy)){
+          detected = dx > 0 ? 'right' : 'left';
+        } else {
+          detected = dy > 0 ? 'down' : 'up';
+        }
+        if (detected === target) succeed();
+        else fail();
+      }
+      pad.addEventListener('pointerdown', function(e){
+        sx = e.clientX; sy = e.clientY;
+      });
+      pad.addEventListener('pointerup', function(e){
+        checkDir(e.clientX - sx, e.clientY - sy);
+      });
+      pad.addEventListener('touchstart', function(e){
+        if (!e.touches.length) return;
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      }, {passive:false});
+      pad.addEventListener('touchend', function(e){
+        if (!e.changedTouches.length) return;
+        checkDir(e.changedTouches[0].clientX - sx, e.changedTouches[0].clientY - sy);
+      }, {passive:false});
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 5 — TAP THE COLOR (Stroop effect)
+   ============================================================ */
+function challengeTapColor(){
+  var palette = [
+    { name:'RED',    hex:'#dc2626' },
+    { name:'GREEN',  hex:'#16a34a' },
+    { name:'BLUE',   hex:'#2563eb' },
+    { name:'YELLOW', hex:'#eab308' },
+    { name:'PURPLE', hex:'#8b5cf6' },
+    { name:'ORANGE', hex:'#ea580c' }
+  ];
+  var shuffled = shuffle(palette.slice());
+  var picked = shuffled.slice(0, 4);
+  var target = picked[Math.floor(Math.random() * picked.length)];
+
+  // The color the target WORD is displayed in — must be different from the target
+  var inkOptions = palette.filter(function(p){ return p.name !== target.name; });
+  var ink = inkOptions[Math.floor(Math.random() * inkOptions.length)];
+
+  return {
+    type: 'Tap the Color',
+    title: 'Tap the tile matching <b style="color:' + ink.hex + '">' + target.name + '</b>',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div style="font-size:12px;color:#71717a;letter-spacing:.15em;text-transform:uppercase;font-weight:600;margin-bottom:12px;text-align:center;">Find the swatch that is ' + target.name + '</div>' +
+        '<div class="tile-grid">' +
+          picked.map(function(p){
+            return '<button class="tile-btn" data-name="' + p.name + '">' +
+              '<div style="width:60px;height:60px;border-radius:12px;margin:0 auto 8px auto;border:2px solid #27272a;background:' + p.hex + '"></div>' +
+              p.name + '</button>';
+          }).join('') +
+        '</div>';
+      var btns = challengeBody.querySelectorAll('.tile-btn');
+      for (var i = 0; i < btns.length; i++){
+        btns[i].addEventListener('click', function(){
+          if (resolved) return;
+          if (this.dataset.name === target.name) succeed();
+          else fail();
+        });
+      }
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 6 — BIGGER NUMBER (4-digit, only tens/hundreds vary)
+   ============================================================
+   We build two 4-digit numbers with identical thousands and units,
+   differing only in the tens and hundreds places.
+   Example: 3421 vs 3581
+*/
+function challengeBiggerNumber(){
+  var thousand = randInt(1, 9);
+  var unit = randInt(0, 9);
+
+  var tensA = randInt(0, 9);
+  var hundredsA = randInt(0, 9);
+  var tensB = randInt(0, 9);
+  var hundredsB = randInt(0, 9);
+
+  // Ensure the numbers are actually different
+  var tries = 0;
+  while (tensA === tensB && hundredsA === hundredsB && tries < 20){
+    tensB = randInt(0, 9);
+    hundredsB = randInt(0, 9);
+    tries++;
+  }
+
+  var a = thousand * 1000 + hundredsA * 100 + tensA * 10 + unit;
+  var b = thousand * 1000 + hundredsB * 100 + tensB * 10 + unit;
+  var bigger = Math.max(a, b);
+
+  return {
+    type: 'Bigger Number',
+    title: 'Tap the <b>bigger</b> number',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div class="tile-grid">' +
+          '<button class="tile-btn" data-num="' + a + '" style="font-size:clamp(18px,2.6vw,24px);letter-spacing:.05em;">' + a + '</button>' +
+          '<button class="tile-btn" data-num="' + b + '" style="font-size:clamp(18px,2.6vw,24px);letter-spacing:.05em;">' + b + '</button>' +
+        '</div>';
+      var btns = challengeBody.querySelectorAll('.tile-btn');
+      for (var i = 0; i < btns.length; i++){
+        btns[i].addEventListener('click', function(){
+          if (resolved) return;
+          if (parseInt(this.dataset.num) === bigger) succeed();
+          else fail();
+        });
+      }
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 7 — MATCH LETTER
+   ============================================================ */
+function challengeMatchLetter(){
+  var target = 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+  var letters = [target];
+  while (letters.length < 4){
+    var r = 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+    if (letters.indexOf(r) === -1) letters.push(r);
+  }
+  shuffle(letters);
+  return {
+    type: 'Match the Letter',
+    title: 'Tap the letter <b>' + target + '</b>',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div class="tile-grid">' +
+          letters.map(function(l){
+            return '<button class="tile-btn" data-letter="' + l + '">' + l + '</button>';
+          }).join('') +
+        '</div>';
+      var btns = challengeBody.querySelectorAll('.tile-btn');
+      for (var i = 0; i < btns.length; i++){
+        btns[i].addEventListener('click', function(){
+          if (resolved) return;
+          if (this.dataset.letter === target) succeed();
+          else fail();
+        });
+      }
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 8 — DON'T TAP (kept frequently)
+   ============================================================ */
+function challengeDontTap(){
+  var waitTime = 2.0;
+  return {
+    type: "Don't Tap",
+    title: 'Do <b>nothing</b> for ' + waitTime.toFixed(0) + ' seconds',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div class="big-counter" id="dontTapTimer">' + waitTime.toFixed(1) + 's</div>' +
+        '<button class="decoy-btn" id="decoy">DO NOT TAP</button>';
+      var btn = document.getElementById('decoy');
+      var counter = document.getElementById('dontTapTimer');
+      var startT = performance.now();
+      var localTick = setInterval(function(){
+        var elapsed = (performance.now() - startT) / 1000;
+        var remaining = Math.max(0, waitTime - elapsed);
+        counter.textContent = remaining.toFixed(1) + 's';
+        if (remaining <= 0){
+          clearInterval(localTick);
+          if (!resolved) succeed();
+        }
+      }, 50);
+      activeTimers.push(localTick);
+      function doTap(e){
+        if (e) e.preventDefault();
+        if (resolved) return;
+        clearInterval(localTick);
+        fail();
+      }
+      btn.addEventListener('click', doTap);
+      btn.addEventListener('touchstart', doTap, {passive:false});
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE 9 — TAP THE SHAPE (single static shape, no falling)
+   ============================================================ */
+function challengeTapShape(){
+  var ALL = [
+    { key:'circle',   glyph:'●', label:'Circle',   color:'#27272a' },
+    { key:'square',   glyph:'■', label:'Square',   color:'#27272a' },
+    { key:'triangle', glyph:'▲', label:'Triangle', color:'#27272a' },
+    { key:'star',     glyph:'★', label:'Star',     color:'#27272a' },
+    { key:'diamond',  glyph:'◆', label:'Diamond',  color:'#27272a' },
+    { key:'hexagon',  glyph:'⬢', label:'Hexagon',  color:'#27272a' }
+  ];
+  var target = ALL[Math.floor(Math.random() * ALL.length)];
+  var others = shuffle(ALL.filter(function(s){ return s.key !== target.key; })).slice(0, 5);
+  var onScreen = shuffle([target].concat(others));
+
+  return {
+    type: 'Tap the ' + target.label,
+    title: 'Tap the <b>' + target.label.toLowerCase() + '</b>',
+    body: function(){
+      challengeBody.innerHTML =
+        '<div id="shapeRow" style="display:flex;flex-wrap:wrap;justify-content:center;gap:18px;font-size:44px;line-height:1;"></div>';
+      var row = document.getElementById('shapeRow');
+      onScreen.forEach(function(shape){
+        var el = document.createElement('div');
+        el.textContent = shape.glyph;
+        el.dataset.key = shape.key;
+        el.style.color = shape.key === target.key ? '#27272a' : '#a1a1aa';
+        el.style.cursor = 'pointer';
+        el.style.userSelect = 'none';
+        el.style.transition = 'transform .1s';
+        function handleTap(e){
+          if (e) e.preventDefault();
+          if (resolved) return;
+          if (el.dataset.key === target.key){
+            sndHit();
+            succeed();
+          } else {
+            fail();
+          }
+        }
+        el.addEventListener('click', handleTap);
+        el.addEventListener('touchstart', handleTap, {passive:false});
+        row.appendChild(el);
+      });
+    }
+  };
+}
+
+/* ============================================================
+   CHALLENGE POOL — weight "Don't Tap" more often
+   ============================================================ */
+var CHALLENGES = [
+  { fn: challengeRapidTap,     weight: 1 },
+  { fn: challengeHoldIt,       weight: 1 },
+  { fn: challengeFallingShapes, weight: 1.5 },
+  { fn: challengeSwipe,        weight: 1.3 },
+  { fn: challengeTapColor,     weight: 1.3 },
+  { fn: challengeBiggerNumber, weight: 1.3 },
+  { fn: challengeMatchLetter,  weight: 1 },
+  { fn: challengeDontTap,      weight: 2.5 },   // frequent
+  { fn: challengeTapShape,     weight: 1 }
+];
+
+function pickChallenge(){
+  // Build weighted pool, excluding the last challenge to reduce repetition
+  var pool = [];
+  CHALLENGES.forEach(function(item){
+    if (item.fn === challengeData.lastPick) return;
+    for (var i = 0; i < Math.round(item.weight * 10); i++){
+      pool.push(item.fn);
+    }
+  });
+  if (pool.length === 0){
+    pool = CHALLENGES.map(function(c){ return c.fn; });
+  }
+  var fn = pool[Math.floor(Math.random() * pool.length)];
+  challengeData.lastPick = fn;
+  return fn();
+}
+
+/* ============================================================
+   ROUND DURATION
+   ============================================================ */
+function computeRoundDuration(){
+  var shrinkage = Math.floor((round - 1) / 3) * TIME_SHRINK_PER_3;
+  return Math.max(MIN_TIME, BASE_TIME - shrinkage);
+}
+
+/* ============================================================
+   GAME LOOP
+   ============================================================ */
+function startGame(){
+  round = 1;
+  lives = MAX_LIVES;
+  challengeData.lastPick = null;
+  clearActiveTimers();
+  buildLives();
+  updateLivesUI();
+  roundVal.textContent = round;
+  overlay.classList.remove('show');
+  intro.classList.add('show');
+  challengeBody.innerHTML = '';
+  challengeType.textContent = 'Get Ready';
+  challengeTitle.textContent = 'Wait…';
+  startIntro();
+}
+
+function startIntro(){
+  var count = 3;
+  introCount.textContent = count;
+  playTone(660, 0.06, 'sine', 0.05);
+  var iv = setInterval(function(){
+    count--;
+    if (count > 0){
+      introCount.textContent = count;
+      introCount.style.animation = 'none';
+      void introCount.offsetWidth;
+      introCount.style.animation = '';
+      playTone(660, 0.06, 'sine', 0.05);
+    } else {
+      clearInterval(iv);
+      introCount.textContent = 'GO';
+      playTone(990, 0.14, 'sine', 0.08);
+      setTimeout(function(){
+        intro.classList.remove('show');
+        startRound();
+      }, 500);
+    }
+  }, 700);
+}
+
+function startRound(){
+  resolved = false;
+  clearActiveTimers();
+  phase = 'playing';
+  roundVal.textContent = round;
+
+  roundDuration = computeRoundDuration();
+  roundStartTime = performance.now();
+  timeLeft = roundDuration;
+  lastTickAt = -1;
+
+  currentChallenge = pickChallenge();
+  challengeType.textContent = currentChallenge.type;
+  challengeTitle.innerHTML = currentChallenge.title;
+  challengeBody.innerHTML = '';
+  currentChallenge.body();
+
+  sndRoundStart();
+  rafId = requestAnimationFrame(loopTimer);
+}
+
+function loopTimer(now){
+  if (phase !== 'playing' || resolved) return;
+  var elapsed = (now - roundStartTime) / 1000;
+  timeLeft = roundDuration - elapsed;
+  if (timeLeft <= 0){
+    timeLeft = 0;
+    updateTimerUI(0);
+    if (!resolved) fail();
+    return;
+  }
+  updateTimerUI(timeLeft);
+  if (timeLeft < 1 && Math.floor(timeLeft * 4) !== lastTickAt){
+    lastTickAt = Math.floor(timeLeft * 4);
+    sndTick();
+  }
+  rafId = requestAnimationFrame(loopTimer);
+}
+
+function updateTimerUI(t){
+  var pct = Math.max(0, Math.min(1, t / roundDuration));
+  timerFill.style.width = (pct * 100) + '%';
+  timerFill.className = '';
+  if (t < 0.5) timerFill.classList.add('danger');
+  else if (t < 1.0) timerFill.classList.add('warning');
+}
+
+/* ============================================================
+   SUCCEED / FAIL
+   ============================================================ */
+function succeed(){
+  if (resolved) return;
+  resolved = true;
+  phase = 'idle';
+  if (rafId) cancelAnimationFrame(rafId);
+  clearActiveTimers();
+
+  flash.classList.remove('fail');
+  flash.classList.add('show');
+  sndSuccess();
+
+  setTimeout(function(){
+    flash.classList.remove('show');
+    round++;
+    startRound();
+  }, 500);
+}
+
+function fail(){
+  if (resolved) return;
+  resolved = true;
+  phase = 'idle';
+  if (rafId) cancelAnimationFrame(rafId);
+  clearActiveTimers();
+
+  flash.classList.add('show', 'fail');
+  sndFail();
+  lives--;
+  updateLivesUI();
+
+  setTimeout(function(){
+    flash.classList.remove('show', 'fail');
+    if (lives <= 0){
+      gameOver();
+    } else {
+      startRound();
+    }
+  }, 800);
+}
+
+function gameOver(){
+  sndGameOver();
+  var reached = round - 1;
+  if (reached > best){
+    best = reached;
+    try { localStorage.setItem(SAVE_KEY, best.toString()); } catch(e){}
+  }
+  setTimeout(function(){
+    ovRound.textContent = reached;
+    ovBest.textContent = 'Best: ' + best;
+    overlay.classList.add('show');
+  }, 400);
+}
+
+/* ============================================================
+   LIVES UI
+   ============================================================ */
+function buildLives(){
+  livesEl.innerHTML = '';
+  for (var i = 0; i < MAX_LIVES; i++){
+    var l = document.createElement('div');
+    l.className = 'life';
+    livesEl.appendChild(l);
+  }
+}
+function updateLivesUI(){
+  var lifeEls = livesEl.querySelectorAll('.life');
+  for (var i = 0; i < MAX_LIVES; i++){
+    lifeEls[i].className = 'life' + (i < lives ? '' : ' lost');
+  }
+}
+
+/* ============================================================
+   RESTART
+   ============================================================ */
+restartBtn.addEventListener('click', startGame);
+restartBtnTop.addEventListener('click', function(e){
+  e.stopPropagation();
+  intro.classList.remove('show');
+  overlay.classList.remove('show');
+  startGame();
+});
+
+document.addEventListener('pointerdown', function(){ initAudio(); }, {once:true});
+
+/* Global tap feedback — every tap on a .tile-btn plays a soft click */
+document.addEventListener('pointerdown', function(e){
+  var btn = e.target.closest && e.target.closest('.tile-btn');
+  if (btn && !resolved){
+    playTone(520, 0.04, 'sine', 0.05);
+  }
+}, true);
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+document.addEventListener('pointerdown', function(){ initAudio(); }, {once:true});
+
+startGame();
+
+})();
+</script>
+</body>
+</html>
